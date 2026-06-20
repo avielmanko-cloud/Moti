@@ -42,4 +42,4 @@ async def broadcaster():
                 await ws.send_text(payload)
             except Exception:
                 dead.add(ws)
-        _connections -= dead
+        _connections.difference_update(dead)

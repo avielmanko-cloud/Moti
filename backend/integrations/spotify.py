@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 from typing import Optional
 from backend.core.config import settings
 from backend.core.state import push_update
@@ -15,55 +16,65 @@ except ImportError:
 
 _sp: Optional[object] = None
 _auth_manager = None
+CACHE_PATH = ".spotify_cache"
+SCOPE = "user-read-playback-state user-modify-playback-state user-read-currently-playing"
+
+
+def _make_auth_manager() -> "SpotifyOAuth":
+    return SpotifyOAuth(
+        client_id=settings.SPOTIFY_CLIENT_ID,
+        client_secret=settings.SPOTIFY_CLIENT_SECRET,
+        redirect_uri=settings.SPOTIFY_REDIRECT_URI,
+        scope=SCOPE,
+        cache_path=CACHE_PATH,
+        open_browser=False,
+    )
 
 
 def get_auth_url() -> Optional[str]:
     if not SPOTIPY_AVAILABLE or not settings.SPOTIFY_CLIENT_ID:
         return None
     global _auth_manager
-    _auth_manager = SpotifyOAuth(
-        client_id=settings.SPOTIFY_CLIENT_ID,
-        client_secret=settings.SPOTIFY_CLIENT_SECRET,
-        redirect_uri=settings.SPOTIFY_REDIRECT_URI,
-        scope="user-read-playback-state user-modify-playback-state user-read-currently-playing",
-        cache_path=".spotify_cache",
-        open_browser=False,
-    )
+    _auth_manager = _make_auth_manager()
     return _auth_manager.get_authorize_url()
 
 
 def handle_callback(code: str) -> bool:
     global _sp, _auth_manager
     if not _auth_manager:
-        return False
+        _auth_manager = _make_auth_manager()
     try:
         token = _auth_manager.get_access_token(code, as_dict=False)
         if token:
             _sp = spotipy.Spotify(auth_manager=_auth_manager)
+            log.info("Spotify authenticated successfully")
             return True
     except Exception as e:
         log.error("Spotify callback error: %s", e)
     return False
 
 
-def _ensure_client():
+def _ensure_client() -> bool:
+    """Return True only if we have a valid, cached Spotify session.
+    Never triggers interactive auth — that requires an explicit /api/spotify/auth call."""
     global _sp, _auth_manager
     if _sp:
         return True
     if not SPOTIPY_AVAILABLE or not settings.SPOTIFY_CLIENT_ID:
         return False
+    # Only auto-restore from cache; don't prompt for a new auth flow here
+    if not os.path.exists(CACHE_PATH):
+        return False
     try:
-        _auth_manager = SpotifyOAuth(
-            client_id=settings.SPOTIFY_CLIENT_ID,
-            client_secret=settings.SPOTIFY_CLIENT_SECRET,
-            redirect_uri=settings.SPOTIFY_REDIRECT_URI,
-            scope="user-read-playback-state user-modify-playback-state user-read-currently-playing",
-            cache_path=".spotify_cache",
-            open_browser=False,
-        )
+        _auth_manager = _make_auth_manager()
+        token_info = _auth_manager.get_cached_token()
+        if not token_info:
+            return False
         _sp = spotipy.Spotify(auth_manager=_auth_manager)
+        log.info("Spotify restored from cache")
         return True
-    except Exception:
+    except Exception as e:
+        log.debug("Spotify cache restore failed: %s", e)
         return False
 
 
