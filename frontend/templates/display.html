@@ -2,181 +2,309 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <title>MOTI Display</title>
+  <title>MOTI — AI</title>
   <link rel="stylesheet" href="/static/css/display.css"/>
 </head>
 <body>
-<div class="d-shell">
 
-  <!-- Grid background -->
-  <div class="bg-grid"></div>
-  <div class="bg-vignette"></div>
+<!-- Ambient background layers -->
+<div class="bg-hex"></div>
+<div class="bg-scan"></div>
+<div class="bg-vignette"></div>
 
-  <!-- ── TOP BAR ── -->
-  <header class="d-topbar">
-    <div class="d-logo">
-      <span class="d-logo-mark">M</span>
-      <div>
-        <div class="d-logo-name">MOTI</div>
-        <div class="d-logo-sub">ROOM AI CONTROL</div>
+<div class="hud">
+
+  <!-- ══ TOP BAR ══════════════════════════════════════════════════════════ -->
+  <header class="hud-top">
+    <div class="hud-top-left">
+      <div class="logo-arc">
+        <svg viewBox="0 0 44 44" class="logo-arc-svg">
+          <circle cx="22" cy="22" r="18" fill="none" stroke="var(--accent)" stroke-width="1.5"
+                  stroke-dasharray="4 3" opacity="0.4"/>
+          <circle cx="22" cy="22" r="12" fill="none" stroke="var(--accent)" stroke-width="1"/>
+          <circle cx="22" cy="22" r="4" fill="var(--accent)" class="logo-core"/>
+        </svg>
+      </div>
+      <div class="logo-text-wrap">
+        <span class="logo-name">MOTI</span>
+        <span class="logo-sub">ARTIFICIAL INTELLIGENCE · ROOM OS v2</span>
       </div>
     </div>
 
-    <div class="d-sys-stats">
-      <div class="d-stat"><span class="d-stat-lbl">CPU</span><span class="d-stat-val" id="d-cpu">—</span></div>
-      <div class="d-stat"><span class="d-stat-lbl">RAM</span><span class="d-stat-val" id="d-ram">—</span></div>
-      <div class="d-stat"><span class="d-stat-lbl">DISK</span><span class="d-stat-val" id="d-disk">—</span></div>
+    <div class="hud-clock-wrap">
+      <div class="hud-clock" id="d-clock">00:00:00</div>
+      <div class="hud-date" id="d-date">—</div>
     </div>
 
-    <div class="d-clock" id="d-clock">00:00:00</div>
+    <div class="hud-top-right">
+      <div class="status-pill" id="pill-lights">
+        <span class="pill-dot"></span><span>LIGHTS</span>
+      </div>
+      <div class="status-pill" id="pill-spotify">
+        <span class="pill-dot"></span><span>SPOTIFY</span>
+      </div>
+      <a href="/" class="hud-ctrl-link">⚙ CTRL</a>
+    </div>
   </header>
 
-  <!-- ── MAIN AREA ── -->
-  <main class="d-main">
+  <!-- ══ MAIN ══════════════════════════════════════════════════════════════ -->
+  <main class="hud-main">
 
-    <!-- Left column: Lights status -->
-    <aside class="d-side d-side-left">
-      <div class="d-side-title">LIGHTS</div>
-      <div id="d-lights" class="d-lights-list"></div>
+    <!-- ── LEFT: Lights ── -->
+    <aside class="hud-panel hud-left">
+      <div class="panel-label">LIGHTING SYSTEM</div>
+      <div id="d-lights" class="lights-stack"></div>
     </aside>
 
-    <!-- Center: AI Character -->
-    <div class="d-center">
-      <div class="d-char-wrap" id="d-char-wrap">
+    <!-- ── CENTER: Core AI ── -->
+    <div class="hud-center">
 
-        <!-- Orbit ring -->
-        <div class="d-orbit" id="d-orbit"></div>
-
-        <!-- Character SVG -->
-        <svg class="d-char" viewBox="0 0 160 200" id="d-char-svg" xmlns="http://www.w3.org/2000/svg">
+      <!-- Outer decorative arcs -->
+      <div class="core-shell">
+        <svg class="core-svg" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <filter id="glow">
-              <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-              <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            <filter id="glow-sm">
+              <feGaussianBlur stdDeviation="2" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
             </filter>
-            <filter id="glow-strong">
-              <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
-              <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            <filter id="glow-md">
+              <feGaussianBlur stdDeviation="5" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
             </filter>
+            <filter id="glow-lg">
+              <feGaussianBlur stdDeviation="12" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <radialGradient id="core-grad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.95"/>
+              <stop offset="40%"  stop-color="#00d4ff" stop-opacity="0.9"/>
+              <stop offset="100%" stop-color="#0055aa" stop-opacity="0.1"/>
+            </radialGradient>
+            <radialGradient id="iris-grad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%"   stop-color="#00d4ff" stop-opacity="0.3"/>
+              <stop offset="100%" stop-color="#0a1a30" stop-opacity="0"/>
+            </radialGradient>
           </defs>
 
-          <!-- Antenna -->
-          <line x1="80" y1="18" x2="80" y2="40" stroke="#00d4ff" stroke-width="2" filter="url(#glow)"/>
-          <circle class="antenna-dot" cx="80" cy="12" r="6" fill="#00d4ff" filter="url(#glow-strong)"/>
+          <!-- Ring 1 — outermost dashed, slow rotate -->
+          <circle class="r-spin-slow" cx="250" cy="250" r="220"
+                  fill="none" stroke="#00d4ff" stroke-width="1"
+                  stroke-dasharray="6 10" opacity="0.25"/>
 
-          <!-- Head -->
-          <rect class="head" x="28" y="40" width="104" height="80" rx="14"
-                fill="#070b14" stroke="#00d4ff" stroke-width="1.5" filter="url(#glow)"/>
+          <!-- Ring 2 — tick marks ring -->
+          <circle class="r-spin-slow" cx="250" cy="250" r="200"
+                  fill="none" stroke="#00d4ff" stroke-width="0.5"
+                  stroke-dasharray="1 12.44" opacity="0.5"/>
 
-          <!-- Eye left -->
-          <g class="eye" id="eye-left">
-            <rect x="38" y="62" width="32" height="22" rx="5"
-                  fill="#00d4ff" opacity="0.15"/>
-            <rect class="eye-inner" x="42" y="66" width="24" height="14" rx="3"
-                  fill="#00d4ff" filter="url(#glow)"/>
-            <rect class="eye-pupil" x="50" y="69" width="8" height="8" rx="2"
-                  fill="#ffffff"/>
+          <!-- Ring 3 — partial arc, counter rotate -->
+          <circle class="r-spin-rev" cx="250" cy="250" r="178"
+                  fill="none" stroke="#00d4ff" stroke-width="1.5"
+                  stroke-dasharray="120 440" opacity="0.7"
+                  filter="url(#glow-sm)"/>
+          <circle class="r-spin-rev" cx="250" cy="250" r="178"
+                  fill="none" stroke="#7b61ff" stroke-width="0.5"
+                  stroke-dasharray="60 500" opacity="0.5"/>
+
+          <!-- Ring 4 — solid mid ring -->
+          <circle cx="250" cy="250" r="155"
+                  fill="none" stroke="#0a2a50" stroke-width="1.5"/>
+          <circle class="r-spin-med" cx="250" cy="250" r="155"
+                  fill="none" stroke="#00d4ff" stroke-width="1"
+                  stroke-dasharray="30 200 60 670" opacity="0.8"
+                  filter="url(#glow-sm)"/>
+
+          <!-- Divider marks on ring 4 -->
+          <g class="r-spin-med" opacity="0.6">
+            <line x1="250" y1="95"  x2="250" y2="108" stroke="#00d4ff" stroke-width="2"/>
+            <line x1="250" y1="95"  x2="250" y2="108" stroke="#00d4ff" stroke-width="2" transform="rotate(45 250 250)"/>
+            <line x1="250" y1="95"  x2="250" y2="108" stroke="#00d4ff" stroke-width="2" transform="rotate(90 250 250)"/>
+            <line x1="250" y1="95"  x2="250" y2="108" stroke="#00d4ff" stroke-width="2" transform="rotate(135 250 250)"/>
+            <line x1="250" y1="95"  x2="250" y2="108" stroke="#00d4ff" stroke-width="2" transform="rotate(180 250 250)"/>
+            <line x1="250" y1="95"  x2="250" y2="108" stroke="#00d4ff" stroke-width="2" transform="rotate(225 250 250)"/>
+            <line x1="250" y1="95"  x2="250" y2="108" stroke="#00d4ff" stroke-width="2" transform="rotate(270 250 250)"/>
+            <line x1="250" y1="95"  x2="250" y2="108" stroke="#00d4ff" stroke-width="2" transform="rotate(315 250 250)"/>
           </g>
 
-          <!-- Eye right -->
-          <g class="eye" id="eye-right">
-            <rect x="90" y="62" width="32" height="22" rx="5"
-                  fill="#00d4ff" opacity="0.15"/>
-            <rect class="eye-inner" x="94" y="66" width="24" height="14" rx="3"
-                  fill="#00d4ff" filter="url(#glow)"/>
-            <rect class="eye-pupil" x="102" y="69" width="8" height="8" rx="2"
-                  fill="#ffffff"/>
+          <!-- Ring 5 — inner data ring -->
+          <circle cx="250" cy="250" r="120"
+                  fill="rgba(0,212,255,0.02)" stroke="#0a2a50" stroke-width="1"/>
+          <circle class="r-spin-rev-fast" cx="250" cy="250" r="120"
+                  fill="none" stroke="#00d4ff" stroke-width="1.5"
+                  stroke-dasharray="40 150 20 540" opacity="0.9"
+                  filter="url(#glow-sm)"/>
+
+          <!-- Core glow backdrop -->
+          <circle cx="250" cy="250" r="80"
+                  fill="url(#iris-grad)"
+                  filter="url(#glow-lg)"/>
+
+          <!-- Core solid ring -->
+          <circle cx="250" cy="250" r="72"
+                  fill="rgba(0,10,24,0.9)"
+                  stroke="#00d4ff" stroke-width="2"
+                  filter="url(#glow-md)"/>
+
+          <!-- Inner iris ring -->
+          <circle class="r-spin-fast" cx="250" cy="250" r="56"
+                  fill="none" stroke="#00d4ff" stroke-width="1"
+                  stroke-dasharray="8 8" opacity="0.6"/>
+
+          <!-- Iris fill -->
+          <circle cx="250" cy="250" r="46"
+                  fill="radial-gradient" fill="rgba(0,212,255,0.06)"/>
+
+          <!-- Central eye -->
+          <ellipse class="iris-pupil" cx="250" cy="250" rx="28" ry="28"
+                   fill="#000810"
+                   stroke="#00d4ff" stroke-width="1.5"
+                   filter="url(#glow-md)"/>
+
+          <!-- Pupil highlight lines (cross) -->
+          <line x1="222" y1="250" x2="278" y2="250" stroke="#00d4ff" stroke-width="0.5" opacity="0.4"/>
+          <line x1="250" y1="222" x2="250" y2="278" stroke="#00d4ff" stroke-width="0.5" opacity="0.4"/>
+
+          <!-- Central core dot -->
+          <circle class="core-pulse" cx="250" cy="250" r="10"
+                  fill="url(#core-grad)" filter="url(#glow-lg)"/>
+          <circle cx="250" cy="250" r="4" fill="#ffffff" opacity="0.95"/>
+
+          <!-- Data readout lines radiating out -->
+          <g opacity="0.35" stroke="#00d4ff" stroke-width="0.5">
+            <line x1="250" y1="130" x2="250" y2="92"/>
+            <line x1="362" y1="250" x2="400" y2="250"/>
+            <line x1="138" y1="250" x2="100" y2="250"/>
+            <line x1="250" y1="370" x2="250" y2="408"/>
+            <line x1="330" y1="170" x2="358" y2="142"/>
+            <line x1="170" y1="330" x2="142" y2="358"/>
           </g>
-
-          <!-- Mouth bar -->
-          <g id="d-mouth">
-            <rect x="48" y="100" width="64" height="8" rx="4"
-                  fill="#00d4ff" opacity="0.15"/>
-            <rect class="mouth-inner" x="52" y="102" width="56" height="4" rx="2"
-                  fill="#00d4ff" filter="url(#glow)"/>
-          </g>
-
-          <!-- Neck -->
-          <rect x="68" y="120" width="24" height="12" rx="3"
-                fill="#0d1526" stroke="#1a3060" stroke-width="1"/>
-
-          <!-- Body -->
-          <rect class="body" x="18" y="132" width="124" height="58" rx="12"
-                fill="#070b14" stroke="#00d4ff" stroke-width="1.5" filter="url(#glow)"/>
-
-          <!-- Body details - chest panel -->
-          <rect x="30" y="142" width="100" height="36" rx="6"
-                fill="#0d1526" stroke="#1a3060" stroke-width="1"/>
-
-          <!-- Status dots on chest -->
-          <circle class="status-dot" id="sd-0" cx="46" cy="155" r="5" fill="#00ffb3"/>
-          <circle class="status-dot" id="sd-1" cx="62" cy="155" r="5" fill="#1a3060"/>
-          <circle class="status-dot" id="sd-2" cx="78" cy="155" r="5" fill="#1a3060"/>
-          <circle class="status-dot" id="sd-3" cx="94" cy="155" r="5" fill="#1a3060"/>
-          <circle class="status-dot" id="sd-4" cx="110" cy="155" r="5" fill="#1a3060"/>
-
-          <!-- Chest equalizer bars (animate when music plays) -->
-          <g id="eq-bars" opacity="0.7">
-            <rect class="eq-bar" x="34"  y="168" width="6" height="4" rx="1" fill="#00d4ff"/>
-            <rect class="eq-bar" x="44"  y="164" width="6" height="8" rx="1" fill="#00d4ff"/>
-            <rect class="eq-bar" x="54"  y="160" width="6" height="12" rx="1" fill="#00d4ff"/>
-            <rect class="eq-bar" x="64"  y="163" width="6" height="9" rx="1" fill="#00d4ff"/>
-            <rect class="eq-bar" x="74"  y="157" width="6" height="15" rx="1" fill="#7b61ff"/>
-            <rect class="eq-bar" x="84"  y="162" width="6" height="10" rx="1" fill="#7b61ff"/>
-            <rect class="eq-bar" x="94"  y="165" width="6" height="7" rx="1" fill="#00d4ff"/>
-            <rect class="eq-bar" x="104" y="160" width="6" height="12" rx="1" fill="#00d4ff"/>
-            <rect class="eq-bar" x="114" y="167" width="6" height="5" rx="1" fill="#00d4ff"/>
-          </g>
+          <!-- Data readout boxes -->
+          <rect x="228" y="78" width="44" height="12" rx="2" fill="#000d1a" stroke="#00d4ff" stroke-width="0.5" opacity="0.7"/>
+          <text x="250" y="88" fill="#00d4ff" font-size="7" text-anchor="middle" font-family="'Share Tech Mono',monospace" id="core-cpu-label">CPU 0%</text>
+          <rect x="362" y="244" width="44" height="12" rx="2" fill="#000d1a" stroke="#00d4ff" stroke-width="0.5" opacity="0.7"/>
+          <text x="384" y="254" fill="#00d4ff" font-size="7" text-anchor="middle" font-family="'Share Tech Mono',monospace" id="core-ram-label">RAM 0%</text>
+          <rect x="406" y="244" width="0" height="0" opacity="0"/>
         </svg>
 
-        <!-- State label under character -->
-        <div class="d-char-state" id="d-char-state">STANDBY</div>
+        <!-- State label below rings -->
+        <div class="core-state" id="d-char-state">SYSTEM ACTIVE</div>
       </div>
+
     </div>
 
-    <!-- Right column: Spotify -->
-    <aside class="d-side d-side-right">
-      <div class="d-side-title">NOW PLAYING</div>
-      <div class="d-album-art" id="d-album-art">♪</div>
-      <div class="d-track" id="d-track">Nothing playing</div>
-      <div class="d-artist" id="d-artist">—</div>
-      <div class="d-progress-wrap">
-        <div class="d-progress-track">
-          <div class="d-progress-fill" id="d-progress-fill"></div>
-        </div>
-        <div class="d-progress-times">
-          <span id="d-prog-cur">0:00</span>
-          <span id="d-prog-total">0:00</span>
-        </div>
+    <!-- ── RIGHT: Spotify ── -->
+    <aside class="hud-panel hud-right">
+      <div class="panel-label">AUDIO STREAM</div>
+
+      <!-- Album art with circular progress ring -->
+      <div class="sp-art-wrap">
+        <svg class="sp-progress-ring" viewBox="0 0 140 140">
+          <circle cx="70" cy="70" r="63" fill="none"
+                  stroke="#0a2a50" stroke-width="4"/>
+          <circle id="sp-ring" cx="70" cy="70" r="63" fill="none"
+                  stroke="#00d4ff" stroke-width="4"
+                  stroke-linecap="round"
+                  stroke-dasharray="395.8 395.8"
+                  stroke-dashoffset="395.8"
+                  transform="rotate(-90 70 70)"
+                  filter="url(#glow-sm)"
+                  style="transition:stroke-dashoffset 0.5s linear"/>
+        </svg>
+        <div class="sp-art" id="d-album-art">♪</div>
       </div>
-      <div class="d-vol-row">
-        <span class="d-vol-icon">🔈</span>
-        <div class="d-vol-bar">
-          <div class="d-vol-fill" id="d-vol-fill"></div>
+
+      <div class="sp-track"  id="d-track">Nothing playing</div>
+      <div class="sp-artist" id="d-artist">—</div>
+
+      <div class="sp-time-row">
+        <span id="d-prog-cur" class="sp-time">0:00</span>
+        <span id="d-prog-total" class="sp-time">0:00</span>
+      </div>
+
+      <!-- Volume arc -->
+      <div class="vol-row">
+        <span class="vol-icon">VOL</span>
+        <div class="vol-bar">
+          <div class="vol-fill" id="d-vol-fill"></div>
         </div>
-        <span id="d-vol-pct" class="d-vol-pct">—</span>
+        <span class="vol-pct" id="d-vol-pct">—</span>
+      </div>
+
+      <!-- EQ visualizer -->
+      <div class="eq-wrap" id="eq-wrap">
+        <div class="eq-bar-group" id="eq-bars">
+          <span class="eqb"></span><span class="eqb"></span><span class="eqb"></span>
+          <span class="eqb"></span><span class="eqb"></span><span class="eqb"></span>
+          <span class="eqb"></span><span class="eqb"></span><span class="eqb"></span>
+          <span class="eqb"></span><span class="eqb"></span><span class="eqb"></span>
+        </div>
       </div>
     </aside>
+
   </main>
 
-  <!-- ── BOTTOM BAR ── -->
-  <footer class="d-footer">
-    <div class="d-footer-left">
-      <div class="d-conn" id="dc-lights">
-        <span class="d-conn-dot"></span> LIGHTS
+  <!-- ══ BOTTOM BAR ════════════════════════════════════════════════════════ -->
+  <footer class="hud-bottom">
+
+    <!-- Arc gauges -->
+    <div class="gauges-row">
+      <div class="arc-gauge-wrap">
+        <svg class="arc-svg" viewBox="0 0 80 80">
+          <circle cx="40" cy="40" r="32" fill="none" stroke="#0a2a50" stroke-width="5"/>
+          <circle id="arc-cpu" cx="40" cy="40" r="32" fill="none"
+                  stroke="#00d4ff" stroke-width="5" stroke-linecap="round"
+                  stroke-dasharray="201.1 201.1" stroke-dashoffset="201.1"
+                  transform="rotate(-90 40 40)"
+                  style="transition:stroke-dashoffset 0.5s;filter:drop-shadow(0 0 4px #00d4ff)"/>
+          <text x="40" y="36" fill="#00d4ff" font-size="10" font-weight="700"
+                text-anchor="middle" font-family="'Share Tech Mono',monospace" id="gauge-cpu-val">0%</text>
+          <text x="40" y="48" fill="#3a5a8a" font-size="6"
+                text-anchor="middle" font-family="'Share Tech Mono',monospace">CPU</text>
+        </svg>
       </div>
-      <div class="d-conn" id="dc-spotify">
-        <span class="d-conn-dot"></span> SPOTIFY
+      <div class="arc-gauge-wrap">
+        <svg class="arc-svg" viewBox="0 0 80 80">
+          <circle cx="40" cy="40" r="32" fill="none" stroke="#0a2a50" stroke-width="5"/>
+          <circle id="arc-ram" cx="40" cy="40" r="32" fill="none"
+                  stroke="#7b61ff" stroke-width="5" stroke-linecap="round"
+                  stroke-dasharray="201.1 201.1" stroke-dashoffset="201.1"
+                  transform="rotate(-90 40 40)"
+                  style="transition:stroke-dashoffset 0.5s;filter:drop-shadow(0 0 4px #7b61ff)"/>
+          <text x="40" y="36" fill="#7b61ff" font-size="10" font-weight="700"
+                text-anchor="middle" font-family="'Share Tech Mono',monospace" id="gauge-ram-val">0%</text>
+          <text x="40" y="48" fill="#3a5a8a" font-size="6"
+                text-anchor="middle" font-family="'Share Tech Mono',monospace">RAM</text>
+        </svg>
+      </div>
+      <div class="arc-gauge-wrap">
+        <svg class="arc-svg" viewBox="0 0 80 80">
+          <circle cx="40" cy="40" r="32" fill="none" stroke="#0a2a50" stroke-width="5"/>
+          <circle id="arc-disk" cx="40" cy="40" r="32" fill="none"
+                  stroke="#00ffb3" stroke-width="5" stroke-linecap="round"
+                  stroke-dasharray="201.1 201.1" stroke-dashoffset="201.1"
+                  transform="rotate(-90 40 40)"
+                  style="transition:stroke-dashoffset 0.5s;filter:drop-shadow(0 0 4px #00ffb3)"/>
+          <text x="40" y="36" fill="#00ffb3" font-size="10" font-weight="700"
+                text-anchor="middle" font-family="'Share Tech Mono',monospace" id="gauge-disk-val">0%</text>
+          <text x="40" y="48" fill="#3a5a8a" font-size="6"
+                text-anchor="middle" font-family="'Share Tech Mono',monospace">DISK</text>
+        </svg>
       </div>
     </div>
 
-    <div class="d-footer-center">
-      <a href="/" class="d-control-link">⚙ CONTROL PANEL</a>
+    <!-- Notes ticker -->
+    <div class="ticker-wrap">
+      <span class="ticker-label">MEMO</span>
+      <div class="ticker-track">
+        <div class="ticker-inner" id="d-notes-ticker">—</div>
+      </div>
     </div>
 
-    <div class="d-footer-right" id="d-notes-ticker">
-      <!-- Scrolling notes ticker -->
+    <!-- Net stats -->
+    <div class="net-stats">
+      <div class="net-row"><span class="net-lbl">↑</span><span class="net-val" id="d-net-up">0 KB/s</span></div>
+      <div class="net-row"><span class="net-lbl">↓</span><span class="net-val" id="d-net-down">0 KB/s</span></div>
     </div>
+
   </footer>
 
 </div>
