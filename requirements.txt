@@ -4,7 +4,7 @@ websockets==16.0
 python-dotenv==1.2.2
 httpx==0.28.1
 spotipy==2.26.0
-python-miio==0.5.12
+yeelight==0.7.14
 aiofiles==25.1.0
 pydantic==2.13.4
 pydantic-settings==2.14.2
@@ -13,4 +13,3 @@ python-multipart==0.0.32
 colorlog==6.10.1
 schedule==1.2.2
 psutil==7.2.2
-twilio==9.10.9

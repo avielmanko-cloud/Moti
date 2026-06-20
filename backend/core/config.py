@@ -3,7 +3,6 @@ from typing import Optional
 
 
 class Settings(BaseSettings):
-    # Server
     HOST: str = "0.0.0.0"
     PORT: int = 8000
     SECRET_KEY: str = "moti-secret-key-change-me"
@@ -13,20 +12,9 @@ class Settings(BaseSettings):
     SPOTIFY_CLIENT_SECRET: Optional[str] = None
     SPOTIFY_REDIRECT_URI: str = "http://127.0.0.1:8000/callback/spotify"
 
-    # Xiaomi
+    # Yeelight (no token needed — just IP + LAN Control enabled in app)
     XIAOMI_LIGHT_IP: Optional[str] = None
-    XIAOMI_LIGHT_TOKEN: Optional[str] = None
     XIAOMI_LIGHT_2_IP: Optional[str] = None
-    XIAOMI_LIGHT_2_TOKEN: Optional[str] = None
-
-    # Twilio / WhatsApp
-    TWILIO_ACCOUNT_SID: Optional[str] = None
-    TWILIO_AUTH_TOKEN: Optional[str] = None
-    TWILIO_WHATSAPP_FROM: str = "whatsapp:+14155238886"
-
-    # Phone ADB
-    ADB_DEVICE_IP: Optional[str] = None
-    ADB_PORT: int = 5555
 
     class Config:
         env_file = ".env"

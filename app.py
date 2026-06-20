@@ -13,7 +13,7 @@ from backend.core.state import state
 from backend.core.scheduler import start as start_scheduler
 from backend.api.routes import router
 from backend.api.websocket import ws_endpoint, broadcaster
-from backend.integrations import xiaomi, whatsapp
+from backend.integrations import xiaomi
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 handler = colorlog.StreamHandler()
@@ -38,6 +38,11 @@ async def index(request: Request):
     return templates.TemplateResponse(request=request, name="index.html")
 
 
+@app.get("/display")
+async def display(request: Request):
+    return templates.TemplateResponse(request=request, name="display.html")
+
+
 @app.websocket("/ws")
 async def websocket_route(ws: WebSocket):
     await ws_endpoint(ws)
@@ -47,7 +52,7 @@ async def websocket_route(ws: WebSocket):
 async def startup():
     log.info("Moti starting up…")
     xiaomi.init()
-    whatsapp.init()
     asyncio.create_task(broadcaster())
     await start_scheduler()
-    log.info("Moti ready at http://%s:%d", settings.HOST, settings.PORT)
+    log.info("Moti ready  →  control: http://localhost:%d  |  display: http://localhost:%d/display",
+             settings.PORT, settings.PORT)

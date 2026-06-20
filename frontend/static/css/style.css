@@ -588,3 +588,37 @@ body::after {
   flex-shrink: 0;
   transition: background 0.3s;
 }
+
+/* ── Notes ── */
+.note-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  position: relative;
+}
+.note-text { flex: 1; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+.note-meta { font-size: 10px; color: var(--text-dim); font-family: var(--mono); white-space: nowrap; margin-top: 2px; }
+.note-del {
+  background: none; border: none; cursor: pointer;
+  color: var(--text-dim); font-size: 13px; padding: 2px 4px;
+  border-radius: 4px; transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+.note-del:hover { color: var(--red); background: rgba(255,56,96,0.1); }
+
+/* ── Timers ── */
+.timer-card {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  min-width: 160px;
+  transition: border-color 0.3s;
+}
+.timer-card.done { border-color: var(--green); box-shadow: 0 0 12px rgba(0,255,179,0.2); }
+.timer-label { font-size: 12px; color: var(--text-dim); font-family: var(--mono); }
+.timer-time  { font-size: 22px; font-weight: 700; color: var(--accent); font-family: var(--mono); flex: 1; }
+.timer-card.done .timer-time { color: var(--green); }

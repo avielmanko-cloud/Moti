@@ -1,9 +1,8 @@
 from typing import Any
 import asyncio
 
-# Global runtime state — single source of truth for the UI
 state: dict[str, Any] = {
-    "lights": {},        # device_id -> {on, brightness, color, name}
+    "lights": {},
     "spotify": {
         "connected": False,
         "playing": False,
@@ -16,16 +15,15 @@ state: dict[str, Any] = {
         "shuffle": False,
         "repeat": "off",
     },
-    "phone": {
-        "connected": False,
-        "battery": None,
-        "wifi": None,
-        "model": None,
+    "pc": {
+        "cpu": 0,
+        "ram": 0,
+        "disk": 0,
+        "net_sent": 0,
+        "net_recv": 0,
     },
-    "whatsapp": {
-        "connected": False,
-        "unread": 0,
-        "last_message": None,
+    "notes": {
+        "items": [],
     },
     "system": {
         "cpu": 0,
@@ -34,10 +32,10 @@ state: dict[str, Any] = {
     },
 }
 
-# WebSocket broadcast queue
 broadcast_queue: asyncio.Queue = asyncio.Queue()
 
 
 async def push_update(topic: str, data: dict):
-    state[topic].update(data)
-    await broadcast_queue.put({"topic": topic, "data": state[topic]})
+    if topic in state:
+        state[topic].update(data)
+    await broadcast_queue.put({"topic": topic, "data": state.get(topic, data)})

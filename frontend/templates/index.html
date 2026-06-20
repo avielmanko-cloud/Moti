@@ -3,14 +3,13 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>MOTI — Room AI Control</title>
+  <title>MOTI — Control Panel</title>
   <link rel="stylesheet" href="/static/css/style.css"/>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
 </head>
 <body>
 <div class="shell">
 
-  <!-- ══ TOP BAR ══════════════════════════════════════════════════ -->
+  <!-- ══ TOP BAR ══ -->
   <header class="topbar">
     <div class="topbar-logo">
       <div class="logo-mark">M</div>
@@ -19,26 +18,17 @@
         <div class="logo-sub">ROOM AI CONTROL</div>
       </div>
     </div>
-
     <div class="topbar-stats">
-      <div class="stat-item">
-        <span class="stat-label">CPU</span>
-        <span class="stat-value" id="sys-cpu">—</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">RAM</span>
-        <span class="stat-value" id="sys-ram">—</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">NET</span>
-        <span class="stat-value" id="ws-status">●</span>
-      </div>
+      <div class="stat-item"><span class="stat-label">CPU</span><span class="stat-value" id="sys-cpu">—</span></div>
+      <div class="stat-item"><span class="stat-label">RAM</span><span class="stat-value" id="sys-ram">—</span></div>
+      <div class="stat-item"><span class="stat-label">DISK</span><span class="stat-value" id="sys-disk">—</span></div>
+      <div class="stat-item"><span class="stat-label">NET↑</span><span class="stat-value" id="sys-up">—</span></div>
+      <div class="stat-item"><span class="stat-label">NET↓</span><span class="stat-value" id="sys-down">—</span></div>
     </div>
-
     <div class="topbar-time" id="clock">00:00:00</div>
   </header>
 
-  <!-- ══ SIDEBAR ══════════════════════════════════════════════════ -->
+  <!-- ══ SIDEBAR ══ -->
   <nav class="sidebar">
     <div class="nav-section">Navigation</div>
     <div class="nav-item active" data-panel="dashboard" onclick="navigate(this)">
@@ -50,22 +40,24 @@
     <div class="nav-item" data-panel="spotify" onclick="navigate(this)">
       <span class="nav-icon">♫</span> Spotify
     </div>
-    <div class="nav-item" data-panel="phone" onclick="navigate(this)">
-      <span class="nav-icon">📱</span> Phone
+    <div class="nav-item" data-panel="notes" onclick="navigate(this)">
+      <span class="nav-icon">📝</span> Notes
+      <span class="nav-badge" id="notes-badge" style="display:none">0</span>
     </div>
-    <div class="nav-item" data-panel="whatsapp" onclick="navigate(this)">
-      <span class="nav-icon">💬</span> WhatsApp
-      <span class="nav-badge" id="wa-badge" style="display:none">0</span>
+    <div class="nav-item" data-panel="pc" onclick="navigate(this)">
+      <span class="nav-icon">🖥</span> PC Stats
     </div>
-
-    <div class="nav-section" style="margin-top:12px">System</div>
+    <div class="nav-section" style="margin-top:12px">View</div>
+    <div class="nav-item" onclick="window.open('/display','_blank')">
+      <span class="nav-icon">📺</span> Display Mode
+    </div>
     <div class="nav-item" data-panel="settings" onclick="navigate(this)">
       <span class="nav-icon">⚙</span> Settings
     </div>
 
     <div class="sidebar-status">
       <div class="conn-row">
-        <span>Xiaomi</span>
+        <span>Lights</span>
         <span class="conn-dot" id="dot-xiaomi"></span>
       </div>
       <div class="conn-row">
@@ -73,50 +65,46 @@
         <span class="conn-dot" id="dot-spotify"></span>
       </div>
       <div class="conn-row">
-        <span>Phone</span>
-        <span class="conn-dot" id="dot-phone"></span>
-      </div>
-      <div class="conn-row">
-        <span>WhatsApp</span>
-        <span class="conn-dot" id="dot-whatsapp"></span>
+        <span>Server</span>
+        <span class="conn-dot on" id="dot-ws"></span>
       </div>
     </div>
   </nav>
 
-  <!-- ══ MAIN ════════════════════════════════════════════════════= -->
+  <!-- ══ MAIN ══ -->
   <main class="main">
 
-    <!-- ─ Dashboard ─────────────────────────────────────────────── -->
+    <!-- ─ Dashboard ─ -->
     <section class="panel active" id="panel-dashboard">
       <div class="overview-grid">
         <div class="overview-tile" onclick="navigate(document.querySelector('[data-panel=lights]'))">
           <span class="tile-icon">💡</span>
           <span class="tile-label">Lights</span>
           <span class="tile-value" id="dash-lights-count">—</span>
-          <span class="tile-sub" id="dash-lights-sub">No devices</span>
+          <span class="tile-sub"  id="dash-lights-sub">No devices</span>
         </div>
         <div class="overview-tile" onclick="navigate(document.querySelector('[data-panel=spotify]'))">
           <span class="tile-icon">♫</span>
           <span class="tile-label">Spotify</span>
           <span class="tile-value" id="dash-spotify-state">OFF</span>
-          <span class="tile-sub" id="dash-spotify-track">Not connected</span>
+          <span class="tile-sub"  id="dash-spotify-track">Not connected</span>
         </div>
-        <div class="overview-tile" onclick="navigate(document.querySelector('[data-panel=phone]'))">
-          <span class="tile-icon">📱</span>
-          <span class="tile-label">Phone</span>
-          <span class="tile-value" id="dash-phone-battery">—</span>
-          <span class="tile-sub" id="dash-phone-model">Not connected</span>
+        <div class="overview-tile">
+          <span class="tile-icon">🖥</span>
+          <span class="tile-label">CPU / RAM</span>
+          <span class="tile-value" id="dash-cpu">—</span>
+          <span class="tile-sub"  id="dash-ram">—</span>
         </div>
-        <div class="overview-tile" onclick="navigate(document.querySelector('[data-panel=whatsapp]'))">
-          <span class="tile-icon">💬</span>
-          <span class="tile-label">WhatsApp</span>
-          <span class="tile-value" id="dash-wa-unread">0</span>
-          <span class="tile-sub">unread messages</span>
+        <div class="overview-tile" onclick="navigate(document.querySelector('[data-panel=notes]'))">
+          <span class="tile-icon">📝</span>
+          <span class="tile-label">Notes</span>
+          <span class="tile-value" id="dash-notes-count">0</span>
+          <span class="tile-sub">quick notes</span>
         </div>
       </div>
 
-      <!-- Mini Spotify in dashboard -->
-      <div class="card" id="dash-player-card">
+      <!-- Mini player -->
+      <div class="card">
         <div class="card-header">
           <div class="card-title"><span class="card-title-icon">♫</span> Now Playing</div>
           <div class="card-status pulse" id="dash-playing-indicator" style="display:none;color:var(--green)">● LIVE</div>
@@ -124,13 +112,13 @@
         <div class="spotify-player">
           <div class="album-art" id="dash-album-art">♪</div>
           <div class="track-info">
-            <div class="track-name" id="dash-track-name">Nothing playing</div>
+            <div class="track-name"   id="dash-track-name">Nothing playing</div>
             <div class="track-artist" id="dash-track-artist">—</div>
             <div class="player-controls">
-              <button class="ctrl-btn" onclick="api('POST','/api/spotify/prev')" title="Previous">⏮</button>
+              <button class="ctrl-btn" onclick="api('POST','/api/spotify/prev')">⏮</button>
               <button class="ctrl-btn primary" id="dash-play-btn" onclick="api('POST','/api/spotify/play_pause')">▶</button>
-              <button class="ctrl-btn" onclick="api('POST','/api/spotify/next')" title="Next">⏭</button>
-              <button class="ctrl-btn" id="dash-shuffle-btn" onclick="api('POST','/api/spotify/shuffle')" title="Shuffle">⇄</button>
+              <button class="ctrl-btn" onclick="api('POST','/api/spotify/next')">⏭</button>
+              <button class="ctrl-btn" id="dash-shuffle-btn" onclick="api('POST','/api/spotify/shuffle')">⇄</button>
             </div>
             <div class="progress-bar-wrap">
               <span id="dash-progress-time">0:00</span>
@@ -141,7 +129,7 @@
         </div>
       </div>
 
-      <!-- Quick light toggles -->
+      <!-- Quick lights -->
       <div class="card">
         <div class="card-header">
           <div class="card-title"><span class="card-title-icon">💡</span> Quick Lights</div>
@@ -154,34 +142,37 @@
       </div>
     </section>
 
-    <!-- ─ Lights ──────────────────────────────────────────────────── -->
+    <!-- ─ Lights ─ -->
     <section class="panel" id="panel-lights">
       <div class="card">
         <div class="card-header">
-          <div class="card-title"><span class="card-title-icon">💡</span> Xiaomi Lights</div>
+          <div class="card-title"><span class="card-title-icon">💡</span> Xiaomi / Yeelight Lights</div>
           <div style="display:flex;gap:8px">
             <button class="btn sm" onclick="allLights(true)">All On</button>
             <button class="btn sm danger" onclick="allLights(false)">All Off</button>
           </div>
         </div>
         <div class="light-widget" id="lights-list"></div>
-        <div id="lights-empty" style="color:var(--text-dim);font-size:13px;padding:12px 0;display:none">
-          No lights configured. Add <code>XIAOMI_LIGHT_IP</code> and <code>XIAOMI_LIGHT_TOKEN</code> to <code>.env</code>.
+        <div id="lights-empty" style="display:none;color:var(--text-dim);font-size:13px;padding:12px 0;line-height:1.8">
+          No lights configured.<br/>
+          Set <code>XIAOMI_LIGHT_IP</code> in <code>.env</code> and enable
+          <strong style="color:var(--accent)">LAN Control</strong> in the Yeelight app.<br/>
+          <em style="font-size:11px">Yeelight app → Device → ⋮ → LAN Control → Enable</em>
         </div>
       </div>
     </section>
 
-    <!-- ─ Spotify ─────────────────────────────────────────────────── -->
+    <!-- ─ Spotify ─ -->
     <section class="panel" id="panel-spotify">
       <div class="card">
         <div class="card-header">
           <div class="card-title"><span class="card-title-icon">♫</span> Spotify</div>
-          <button class="btn sm" id="spotify-auth-btn" onclick="spotifyAuth()" style="display:none">Connect Spotify</button>
+          <button class="btn sm primary" id="spotify-auth-btn" onclick="spotifyAuth()" style="display:none">Connect Spotify</button>
         </div>
         <div class="spotify-player">
           <div class="album-art" id="sp-album-art">♪</div>
           <div class="track-info">
-            <div class="track-name" id="sp-track-name">Nothing playing</div>
+            <div class="track-name"   id="sp-track-name">Nothing playing</div>
             <div class="track-artist" id="sp-track-artist">—</div>
             <div class="player-controls">
               <button class="ctrl-btn" onclick="api('POST','/api/spotify/prev')">⏮</button>
@@ -207,81 +198,84 @@
       </div>
     </section>
 
-    <!-- ─ Phone ───────────────────────────────────────────────────── -->
-    <section class="panel" id="panel-phone">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title"><span class="card-title-icon">📱</span> Android Phone (ADB)</div>
-          <button class="btn sm primary" onclick="connectPhone()">Connect ADB</button>
-        </div>
-        <div class="phone-grid">
-          <div class="phone-stat">
-            <span class="phone-stat-label">Model</span>
-            <span class="phone-stat-value" id="ph-model" style="font-size:14px">—</span>
-          </div>
-          <div class="phone-stat">
-            <span class="phone-stat-label">Battery</span>
-            <span class="phone-stat-value" id="ph-battery">—</span>
-            <div class="battery-bar"><div class="battery-fill" id="ph-battery-bar" style="width:0%"></div></div>
-          </div>
-          <div class="phone-stat">
-            <span class="phone-stat-label">Wi-Fi</span>
-            <span class="phone-stat-value" id="ph-wifi" style="font-size:14px">—</span>
-          </div>
-          <div class="phone-stat">
-            <span class="phone-stat-label">Status</span>
-            <span class="phone-stat-value" id="ph-status">Offline</span>
-          </div>
-        </div>
-        <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
-          <div style="font-size:11px;color:var(--text-dim);font-family:var(--mono);margin-bottom:10px;letter-spacing:1px">SETUP</div>
-          <div style="font-size:13px;color:var(--text-dim);line-height:1.8">
-            1. Enable <strong style="color:var(--accent)">Developer Options</strong> on your phone<br/>
-            2. Enable <strong style="color:var(--accent)">Wireless debugging</strong><br/>
-            3. Set <code>ADB_DEVICE_IP</code> in <code>.env</code> to your phone's IP<br/>
-            4. Click <strong style="color:var(--accent)">Connect ADB</strong>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ─ WhatsApp ─────────────────────────────────────────────────── -->
-    <section class="panel" id="panel-whatsapp">
+    <!-- ─ Notes ─ -->
+    <section class="panel" id="panel-notes">
       <div class="grid-2">
         <div class="card">
           <div class="card-header">
-            <div class="card-title"><span class="card-title-icon">💬</span> Send Message</div>
+            <div class="card-title"><span class="card-title-icon">📝</span> Quick Note</div>
           </div>
-          <div class="wa-compose">
-            <div class="wa-field">
-              <label class="wa-label">TO NUMBER</label>
-              <input class="wa-input" id="wa-to" placeholder="+1 234 567 8900"/>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <textarea class="wa-textarea" id="note-input" placeholder="Type a note…" rows="4"
+              onkeydown="if(event.ctrlKey&&event.key==='Enter')addNote()"></textarea>
+            <div style="display:flex;gap:8px">
+              <button class="btn primary" onclick="addNote()">Add Note <span style="font-size:10px;opacity:0.6">(Ctrl+Enter)</span></button>
+              <button class="btn danger sm" onclick="clearNotes()" style="margin-left:auto">Clear All</button>
             </div>
-            <div class="wa-field">
-              <label class="wa-label">MESSAGE</label>
-              <textarea class="wa-textarea" id="wa-msg" placeholder="Type your message…" rows="3"></textarea>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="card-title-icon">📋</span> Notes</div>
+            <span id="notes-count-label" style="font-family:var(--mono);font-size:12px;color:var(--text-dim)">0 notes</span>
+          </div>
+          <div id="notes-list" style="display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto"></div>
+        </div>
+      </div>
+
+      <!-- Timers -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="card-title-icon">⏱</span> Timers</div>
+          <button class="btn sm primary" onclick="addTimer()">+ Timer</button>
+        </div>
+        <div id="timers-list" style="display:flex;flex-wrap:wrap;gap:12px"></div>
+        <div id="timers-empty" style="color:var(--text-dim);font-size:13px;padding:8px 0">No active timers.</div>
+      </div>
+    </section>
+
+    <!-- ─ PC Stats ─ -->
+    <section class="panel" id="panel-pc">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="card-title-icon">🖥</span> Hardware</div>
+          </div>
+          <div class="phone-grid">
+            <div class="phone-stat">
+              <span class="phone-stat-label">CPU</span>
+              <span class="phone-stat-value" id="pc-cpu">—</span>
+              <div class="battery-bar"><div class="battery-fill" id="pc-cpu-bar"></div></div>
             </div>
-            <button class="btn primary" onclick="sendWhatsApp()">Send via WhatsApp</button>
-            <div style="font-size:11px;color:var(--text-dim);line-height:1.6;margin-top:4px">
-              Requires Twilio WhatsApp Sandbox.<br/>
-              Set <code>TWILIO_ACCOUNT_SID</code> and <code>TWILIO_AUTH_TOKEN</code> in <code>.env</code>.
+            <div class="phone-stat">
+              <span class="phone-stat-label">RAM</span>
+              <span class="phone-stat-value" id="pc-ram">—</span>
+              <div class="battery-bar"><div class="battery-fill" id="pc-ram-bar"></div></div>
+            </div>
+            <div class="phone-stat">
+              <span class="phone-stat-label">DISK</span>
+              <span class="phone-stat-value" id="pc-disk">—</span>
+              <div class="battery-bar"><div class="battery-fill" id="pc-disk-bar"></div></div>
+            </div>
+            <div class="phone-stat">
+              <span class="phone-stat-label">NETWORK</span>
+              <span class="phone-stat-value" id="pc-net" style="font-size:13px">—</span>
             </div>
           </div>
         </div>
 
+        <!-- Mini history chart (CSS bars) -->
         <div class="card">
           <div class="card-header">
-            <div class="card-title"><span class="card-title-icon">💬</span> Messages</div>
-            <span id="wa-unread-count" style="font-family:var(--mono);font-size:12px;color:var(--text-dim)">0 unread</span>
+            <div class="card-title"><span class="card-title-icon">📊</span> CPU History</div>
           </div>
-          <div class="wa-feed" id="wa-feed">
-            <div style="color:var(--text-dim);font-size:13px;padding:12px 0">No messages yet.</div>
-          </div>
+          <div id="cpu-history" style="display:flex;align-items:flex-end;gap:3px;height:80px"></div>
+          <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-top:6px">Last 40 samples · 3s interval</div>
         </div>
       </div>
     </section>
 
-    <!-- ─ Settings ─────────────────────────────────────────────────── -->
+    <!-- ─ Settings ─ -->
     <section class="panel" id="panel-settings">
       <div class="card">
         <div class="card-header">
@@ -289,8 +283,7 @@
         </div>
         <div style="display:flex;flex-direction:column;gap:16px">
           <div style="font-size:13px;line-height:1.9;color:var(--text-dim)">
-            Moti is configured via a <code style="color:var(--accent)">.env</code> file in the project root.<br/>
-            Copy <code>.env.example</code> → <code>.env</code> and fill in your credentials.
+            Configure Moti via <code style="color:var(--accent)">.env</code> in the project root.
           </div>
 
           <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:var(--mono)">
@@ -298,15 +291,25 @@
               <tr style="color:var(--text-dim);font-size:11px;letter-spacing:1px;text-align:left;border-bottom:1px solid var(--border)">
                 <th style="padding:6px 12px">VARIABLE</th>
                 <th style="padding:6px 12px">STATUS</th>
-                <th style="padding:6px 12px">DESCRIPTION</th>
+                <th style="padding:6px 12px">NOTES</th>
               </tr>
             </thead>
             <tbody id="settings-table"></tbody>
           </table>
 
-          <div style="padding-top:12px;border-top:1px solid var(--border)">
-            <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;letter-spacing:1px">SPOTIFY</div>
+          <div style="padding-top:12px;border-top:1px solid var(--border);display:flex;gap:10px;align-items:center">
             <button class="btn primary" onclick="spotifyAuth()">Re-authenticate Spotify</button>
+            <span style="font-size:11px;color:var(--text-dim)">Opens Spotify auth in new window</span>
+          </div>
+
+          <div style="padding-top:12px;border-top:1px solid var(--border)">
+            <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;letter-spacing:1px">YEELIGHT LAN SETUP</div>
+            <div style="font-size:13px;color:var(--text-dim);line-height:1.8">
+              1. Open <strong style="color:var(--accent)">Yeelight app</strong> on your phone<br/>
+              2. Select your bulb → tap <strong style="color:var(--accent)">⋮</strong> → <strong style="color:var(--accent)">LAN Control</strong> → Enable<br/>
+              3. Set <code>XIAOMI_LIGHT_IP</code> to your bulb's IP in <code>.env</code><br/>
+              4. No token needed — restart MOTI
+            </div>
           </div>
         </div>
       </div>
@@ -315,9 +318,7 @@
   </main>
 </div>
 
-<!-- Toast container -->
 <div class="toasts" id="toasts"></div>
-
 <script src="/static/js/app.js"></script>
 </body>
 </html>

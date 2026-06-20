@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>MOTI Display</title>
+  <link rel="stylesheet" href="/static/css/display.css"/>
+</head>
+<body>
+<div class="d-shell">
+
+  <!-- Grid background -->
+  <div class="bg-grid"></div>
+  <div class="bg-vignette"></div>
+
+  <!-- ── TOP BAR ── -->
+  <header class="d-topbar">
+    <div class="d-logo">
+      <span class="d-logo-mark">M</span>
+      <div>
+        <div class="d-logo-name">MOTI</div>
+        <div class="d-logo-sub">ROOM AI CONTROL</div>
+      </div>
+    </div>
+
+    <div class="d-sys-stats">
+      <div class="d-stat"><span class="d-stat-lbl">CPU</span><span class="d-stat-val" id="d-cpu">—</span></div>
+      <div class="d-stat"><span class="d-stat-lbl">RAM</span><span class="d-stat-val" id="d-ram">—</span></div>
+      <div class="d-stat"><span class="d-stat-lbl">DISK</span><span class="d-stat-val" id="d-disk">—</span></div>
+    </div>
+
+    <div class="d-clock" id="d-clock">00:00:00</div>
+  </header>
+
+  <!-- ── MAIN AREA ── -->
+  <main class="d-main">
+
+    <!-- Left column: Lights status -->
+    <aside class="d-side d-side-left">
+      <div class="d-side-title">LIGHTS</div>
+      <div id="d-lights" class="d-lights-list"></div>
+    </aside>
+
+    <!-- Center: AI Character -->
+    <div class="d-center">
+      <div class="d-char-wrap" id="d-char-wrap">
+
+        <!-- Orbit ring -->
+        <div class="d-orbit" id="d-orbit"></div>
+
+        <!-- Character SVG -->
+        <svg class="d-char" viewBox="0 0 160 200" id="d-char-svg" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+              <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="glow-strong">
+              <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
+              <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+
+          <!-- Antenna -->
+          <line x1="80" y1="18" x2="80" y2="40" stroke="#00d4ff" stroke-width="2" filter="url(#glow)"/>
+          <circle class="antenna-dot" cx="80" cy="12" r="6" fill="#00d4ff" filter="url(#glow-strong)"/>
+
+          <!-- Head -->
+          <rect class="head" x="28" y="40" width="104" height="80" rx="14"
+                fill="#070b14" stroke="#00d4ff" stroke-width="1.5" filter="url(#glow)"/>
+
+          <!-- Eye left -->
+          <g class="eye" id="eye-left">
+            <rect x="38" y="62" width="32" height="22" rx="5"
+                  fill="#00d4ff" opacity="0.15"/>
+            <rect class="eye-inner" x="42" y="66" width="24" height="14" rx="3"
+                  fill="#00d4ff" filter="url(#glow)"/>
+            <rect class="eye-pupil" x="50" y="69" width="8" height="8" rx="2"
+                  fill="#ffffff"/>
+          </g>
+
+          <!-- Eye right -->
+          <g class="eye" id="eye-right">
+            <rect x="90" y="62" width="32" height="22" rx="5"
+                  fill="#00d4ff" opacity="0.15"/>
+            <rect class="eye-inner" x="94" y="66" width="24" height="14" rx="3"
+                  fill="#00d4ff" filter="url(#glow)"/>
+            <rect class="eye-pupil" x="102" y="69" width="8" height="8" rx="2"
+                  fill="#ffffff"/>
+          </g>
+
+          <!-- Mouth bar -->
+          <g id="d-mouth">
+            <rect x="48" y="100" width="64" height="8" rx="4"
+                  fill="#00d4ff" opacity="0.15"/>
+            <rect class="mouth-inner" x="52" y="102" width="56" height="4" rx="2"
+                  fill="#00d4ff" filter="url(#glow)"/>
+          </g>
+
+          <!-- Neck -->
+          <rect x="68" y="120" width="24" height="12" rx="3"
+                fill="#0d1526" stroke="#1a3060" stroke-width="1"/>
+
+          <!-- Body -->
+          <rect class="body" x="18" y="132" width="124" height="58" rx="12"
+                fill="#070b14" stroke="#00d4ff" stroke-width="1.5" filter="url(#glow)"/>
+
+          <!-- Body details - chest panel -->
+          <rect x="30" y="142" width="100" height="36" rx="6"
+                fill="#0d1526" stroke="#1a3060" stroke-width="1"/>
+
+          <!-- Status dots on chest -->
+          <circle class="status-dot" id="sd-0" cx="46" cy="155" r="5" fill="#00ffb3"/>
+          <circle class="status-dot" id="sd-1" cx="62" cy="155" r="5" fill="#1a3060"/>
+          <circle class="status-dot" id="sd-2" cx="78" cy="155" r="5" fill="#1a3060"/>
+          <circle class="status-dot" id="sd-3" cx="94" cy="155" r="5" fill="#1a3060"/>
+          <circle class="status-dot" id="sd-4" cx="110" cy="155" r="5" fill="#1a3060"/>
+
+          <!-- Chest equalizer bars (animate when music plays) -->
+          <g id="eq-bars" opacity="0.7">
+            <rect class="eq-bar" x="34"  y="168" width="6" height="4" rx="1" fill="#00d4ff"/>
+            <rect class="eq-bar" x="44"  y="164" width="6" height="8" rx="1" fill="#00d4ff"/>
+            <rect class="eq-bar" x="54"  y="160" width="6" height="12" rx="1" fill="#00d4ff"/>
+            <rect class="eq-bar" x="64"  y="163" width="6" height="9" rx="1" fill="#00d4ff"/>
+            <rect class="eq-bar" x="74"  y="157" width="6" height="15" rx="1" fill="#7b61ff"/>
+            <rect class="eq-bar" x="84"  y="162" width="6" height="10" rx="1" fill="#7b61ff"/>
+            <rect class="eq-bar" x="94"  y="165" width="6" height="7" rx="1" fill="#00d4ff"/>
+            <rect class="eq-bar" x="104" y="160" width="6" height="12" rx="1" fill="#00d4ff"/>
+            <rect class="eq-bar" x="114" y="167" width="6" height="5" rx="1" fill="#00d4ff"/>
+          </g>
+        </svg>
+
+        <!-- State label under character -->
+        <div class="d-char-state" id="d-char-state">STANDBY</div>
+      </div>
+    </div>
+
+    <!-- Right column: Spotify -->
+    <aside class="d-side d-side-right">
+      <div class="d-side-title">NOW PLAYING</div>
+      <div class="d-album-art" id="d-album-art">♪</div>
+      <div class="d-track" id="d-track">Nothing playing</div>
+      <div class="d-artist" id="d-artist">—</div>
+      <div class="d-progress-wrap">
+        <div class="d-progress-track">
+          <div class="d-progress-fill" id="d-progress-fill"></div>
+        </div>
+        <div class="d-progress-times">
+          <span id="d-prog-cur">0:00</span>
+          <span id="d-prog-total">0:00</span>
+        </div>
+      </div>
+      <div class="d-vol-row">
+        <span class="d-vol-icon">🔈</span>
+        <div class="d-vol-bar">
+          <div class="d-vol-fill" id="d-vol-fill"></div>
+        </div>
+        <span id="d-vol-pct" class="d-vol-pct">—</span>
+      </div>
+    </aside>
+  </main>
+
+  <!-- ── BOTTOM BAR ── -->
+  <footer class="d-footer">
+    <div class="d-footer-left">
+      <div class="d-conn" id="dc-lights">
+        <span class="d-conn-dot"></span> LIGHTS
+      </div>
+      <div class="d-conn" id="dc-spotify">
+        <span class="d-conn-dot"></span> SPOTIFY
+      </div>
+    </div>
+
+    <div class="d-footer-center">
+      <a href="/" class="d-control-link">⚙ CONTROL PANEL</a>
+    </div>
+
+    <div class="d-footer-right" id="d-notes-ticker">
+      <!-- Scrolling notes ticker -->
+    </div>
+  </footer>
+
+</div>
+
+<script src="/static/js/display.js"></script>
+</body>
+</html>
