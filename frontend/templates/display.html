@@ -20,19 +20,17 @@
       <circle cx="17" cy="17" r="14" fill="none" stroke="#00d4ff" stroke-width="1" opacity="0.25"/>
       <circle cx="17" cy="17" r="9"  fill="none" stroke="#00d4ff" stroke-width="1" opacity="0.5"/>
       <circle cx="17" cy="17" r="4"  fill="#00d4ff"/>
-      <circle cx="17" cy="17" r="1.5" fill="#ffffff"/>
+      <circle cx="17" cy="17" r="1.5" fill="#fff"/>
     </svg>
     <div class="logo-text">
       <div class="logo-name">MOTI</div>
       <div class="logo-sub">ROOM INTELLIGENCE · OS v2</div>
     </div>
   </div>
-
   <div class="tb-clock">
     <div class="tb-time" id="d-clock">00:00:00</div>
     <div class="tb-date" id="d-date">—</div>
   </div>
-
   <div class="tb-right">
     <div class="pill" id="pill-lights"><span class="pill-dot"></span>LIGHTS</div>
     <div class="pill" id="pill-spotify"><span class="pill-dot"></span>SPOTIFY</div>
@@ -40,7 +38,177 @@
   </div>
 </header>
 
-<!-- ══ WIDGET CANVAS ═══════════════════════════════════════════════════════ -->
+<!-- ══ JARVIS HOLOGRAPHIC FACE (background) ═════════════════════════════ -->
+<div class="jarvis-wrap">
+  <svg class="jarvis-face" viewBox="0 0 400 480" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <!-- Wireframe glow -->
+      <filter id="f-wire" x="-15%" y="-15%" width="130%" height="130%">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <!-- Eye strong glow -->
+      <filter id="f-eye" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <!-- Scan line gradient -->
+      <linearGradient id="scan-g" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stop-color="#00d4ff" stop-opacity="0"/>
+        <stop offset="40%"  stop-color="#00d4ff" stop-opacity="0.15"/>
+        <stop offset="50%"  stop-color="#00d4ff" stop-opacity="0.3"/>
+        <stop offset="60%"  stop-color="#00d4ff" stop-opacity="0.15"/>
+        <stop offset="100%" stop-color="#00d4ff" stop-opacity="0"/>
+      </linearGradient>
+      <!-- Clip to face silhouette -->
+      <clipPath id="face-clip">
+        <polygon points="200,28 138,48 88,106 70,183 80,266 113,338 163,390 200,408 237,390 287,338 320,266 330,183 312,106 262,48"/>
+      </clipPath>
+    </defs>
+
+    <!-- Outer ambient ring -->
+    <ellipse cx="200" cy="220" rx="170" ry="212"
+             fill="none" stroke="#00d4ff" stroke-width="0.5" opacity="0.1"/>
+
+    <!-- Face fill (very subtle tint) -->
+    <polygon points="200,28 138,48 88,106 70,183 80,266 113,338 163,390 200,408 237,390 287,338 320,266 330,183 312,106 262,48"
+             fill="rgba(0,25,55,0.18)" stroke="none"/>
+
+    <!-- ── Wireframe ── -->
+    <g stroke="#00d4ff" fill="none" stroke-width="0.8" opacity="0.8" filter="url(#f-wire)">
+
+      <!-- Head outline -->
+      <polygon points="200,28 138,48 88,106 70,183 80,266 113,338 163,390 200,408 237,390 287,338 320,266 330,183 312,106 262,48"
+               stroke-width="1.2"/>
+
+      <!-- Forehead structure -->
+      <line x1="200" y1="28"  x2="168" y2="88"/>
+      <line x1="200" y1="28"  x2="232" y2="88"/>
+      <line x1="138" y1="48"  x2="168" y2="88"/>
+      <line x1="262" y1="48"  x2="232" y2="88"/>
+      <line x1="168" y1="88"  x2="200" y2="78"/>
+      <line x1="232" y1="88"  x2="200" y2="78"/>
+      <line x1="88"  y1="106" x2="130" y2="148"/>
+      <line x1="312" y1="106" x2="270" y2="148"/>
+      <line x1="130" y1="148" x2="168" y2="88"/>
+      <line x1="270" y1="148" x2="232" y2="88"/>
+
+      <!-- Left eye region -->
+      <line x1="88"  y1="106" x2="108" y2="162"/>
+      <line x1="108" y1="162" x2="130" y2="148"/>
+      <line x1="70"  y1="183" x2="108" y2="162"/>
+      <line x1="108" y1="162" x2="122" y2="192"/>
+      <ellipse cx="155" cy="192" rx="33" ry="21"/>
+      <line x1="122" y1="192" x2="108" y2="162"/>
+
+      <!-- Right eye region -->
+      <line x1="312" y1="106" x2="292" y2="162"/>
+      <line x1="292" y1="162" x2="270" y2="148"/>
+      <line x1="330" y1="183" x2="292" y2="162"/>
+      <line x1="292" y1="162" x2="278" y2="192"/>
+      <ellipse cx="245" cy="192" rx="33" ry="21"/>
+      <line x1="278" y1="192" x2="292" y2="162"/>
+
+      <!-- Nose bridge -->
+      <line x1="200" y1="78"  x2="194" y2="240"/>
+      <line x1="200" y1="78"  x2="206" y2="240"/>
+      <line x1="194" y1="240" x2="184" y2="255"/>
+      <line x1="206" y1="240" x2="216" y2="255"/>
+      <line x1="184" y1="255" x2="200" y2="264"/>
+      <line x1="216" y1="255" x2="200" y2="264"/>
+
+      <!-- Left cheek -->
+      <line x1="70"  y1="183" x2="80"  y2="266"/>
+      <line x1="108" y1="162" x2="126" y2="254"/>
+      <line x1="70"  y1="183" x2="126" y2="254"/>
+      <line x1="80"  y1="266" x2="126" y2="254"/>
+      <line x1="126" y1="254" x2="184" y2="255"/>
+      <line x1="126" y1="254" x2="152" y2="286"/>
+
+      <!-- Right cheek -->
+      <line x1="330" y1="183" x2="320" y2="266"/>
+      <line x1="292" y1="162" x2="274" y2="254"/>
+      <line x1="330" y1="183" x2="274" y2="254"/>
+      <line x1="320" y1="266" x2="274" y2="254"/>
+      <line x1="274" y1="254" x2="216" y2="255"/>
+      <line x1="274" y1="254" x2="248" y2="286"/>
+
+      <!-- Mouth -->
+      <path d="M152,286 Q200,271 248,286"/>
+      <path d="M152,286 Q200,308 248,286" stroke-width="0.7"/>
+
+      <!-- Center face lines -->
+      <line x1="200" y1="264" x2="200" y2="278"/>
+      <line x1="152" y1="286" x2="200" y2="278"/>
+      <line x1="248" y1="286" x2="200" y2="278"/>
+
+      <!-- Left jaw -->
+      <line x1="80"  y1="266" x2="113" y2="338"/>
+      <line x1="126" y1="254" x2="113" y2="338"/>
+      <line x1="152" y1="286" x2="113" y2="338"/>
+      <line x1="152" y1="286" x2="142" y2="360"/>
+      <line x1="113" y1="338" x2="142" y2="360"/>
+      <line x1="142" y1="360" x2="163" y2="390"/>
+      <line x1="163" y1="390" x2="200" y2="408"/>
+      <line x1="142" y1="360" x2="200" y2="408"/>
+
+      <!-- Right jaw -->
+      <line x1="320" y1="266" x2="287" y2="338"/>
+      <line x1="274" y1="254" x2="287" y2="338"/>
+      <line x1="248" y1="286" x2="287" y2="338"/>
+      <line x1="248" y1="286" x2="258" y2="360"/>
+      <line x1="287" y1="338" x2="258" y2="360"/>
+      <line x1="258" y1="360" x2="237" y2="390"/>
+      <line x1="237" y1="390" x2="200" y2="408"/>
+      <line x1="258" y1="360" x2="200" y2="408"/>
+
+    </g>
+
+    <!-- ── Eye glows (separate layer, strong glow) ── -->
+    <g filter="url(#f-eye)">
+      <circle cx="155" cy="192" r="12" fill="rgba(0,212,255,0.25)" stroke="#00d4ff" stroke-width="1.5"/>
+      <circle id="eye-l" cx="155" cy="192" r="5" fill="#00d4ff"/>
+      <circle cx="245" cy="192" r="12" fill="rgba(0,212,255,0.25)" stroke="#00d4ff" stroke-width="1.5"/>
+      <circle id="eye-r" cx="245" cy="192" r="5" fill="#00d4ff"/>
+    </g>
+
+    <!-- ── Vertex nodes ── -->
+    <g fill="#00d4ff" opacity="0.55">
+      <circle cx="200" cy="28"  r="2.5"/>
+      <circle cx="138" cy="48"  r="1.8"/>
+      <circle cx="262" cy="48"  r="1.8"/>
+      <circle cx="88"  cy="106" r="1.8"/>
+      <circle cx="312" cy="106" r="1.8"/>
+      <circle cx="70"  cy="183" r="1.8"/>
+      <circle cx="330" cy="183" r="1.8"/>
+      <circle cx="80"  cy="266" r="1.8"/>
+      <circle cx="320" cy="266" r="1.8"/>
+      <circle cx="113" cy="338" r="1.8"/>
+      <circle cx="287" cy="338" r="1.8"/>
+      <circle cx="163" cy="390" r="1.8"/>
+      <circle cx="237" cy="390" r="1.8"/>
+      <circle cx="200" cy="408" r="2.5"/>
+      <circle cx="168" cy="88"  r="1.2"/>
+      <circle cx="232" cy="88"  r="1.2"/>
+      <circle cx="200" cy="78"  r="1.2"/>
+      <circle cx="130" cy="148" r="1.2"/>
+      <circle cx="270" cy="148" r="1.2"/>
+      <circle cx="126" cy="254" r="1.2"/>
+      <circle cx="274" cy="254" r="1.2"/>
+      <circle cx="200" cy="264" r="1.2"/>
+      <circle cx="142" cy="360" r="1.2"/>
+      <circle cx="258" cy="360" r="1.2"/>
+    </g>
+
+    <!-- ── Scan line ── -->
+    <rect id="face-scan" x="50" y="-80" width="300" height="80"
+          fill="url(#scan-g)" clip-path="url(#face-clip)"/>
+  </svg>
+
+  <div class="jarvis-label" id="d-char-state">SYSTEM ACTIVE</div>
+</div>
+
+<!-- ══ WIDGET CANVAS ════════════════════════════════════════════════════ -->
 <div class="canvas" id="canvas">
 
   <!-- LIGHTS widget -->
@@ -64,19 +232,17 @@
     </div>
     <div class="widget-body sp-body">
       <div class="sp-row">
-        <!-- Album art + circular progress -->
         <div class="sp-art-wrap">
-          <svg viewBox="0 0 120 120" class="sp-ring-svg">
-            <circle cx="60" cy="60" r="54" fill="none" stroke="#0d1e38" stroke-width="3"/>
-            <circle id="sp-ring" cx="60" cy="60" r="54" fill="none"
+          <svg viewBox="0 0 110 110" class="sp-ring-svg">
+            <circle cx="55" cy="55" r="49" fill="none" stroke="#0d1e38" stroke-width="3"/>
+            <circle id="sp-ring" cx="55" cy="55" r="49" fill="none"
                     stroke="#00d4ff" stroke-width="3" stroke-linecap="round"
-                    stroke-dasharray="339.3 339.3" stroke-dashoffset="339.3"
-                    transform="rotate(-90 60 60)"
+                    stroke-dasharray="307.9 307.9" stroke-dashoffset="307.9"
+                    transform="rotate(-90 55 55)"
                     style="transition:stroke-dashoffset 0.5s linear"/>
           </svg>
           <div class="sp-art" id="d-album-art">♪</div>
         </div>
-        <!-- Track info -->
         <div class="sp-info">
           <div class="sp-track"  id="d-track">Nothing playing</div>
           <div class="sp-artist" id="d-artist">—</div>
@@ -91,7 +257,6 @@
           </div>
         </div>
       </div>
-      <!-- EQ bars -->
       <div class="eq-row" id="eq-bars">
         <span class="eqb"></span><span class="eqb"></span><span class="eqb"></span>
         <span class="eqb"></span><span class="eqb"></span><span class="eqb"></span>
@@ -119,9 +284,8 @@
                     transform="rotate(-90 35 35)"
                     style="transition:stroke-dashoffset 0.6s;filter:drop-shadow(0 0 5px #00d4ff)"/>
             <text id="gauge-cpu-val" x="35" y="32" text-anchor="middle"
-                  fill="#00d4ff" font-size="11" font-weight="700" font-family="'Share Tech Mono',monospace">0%</text>
-            <text x="35" y="44" text-anchor="middle"
-                  fill="#2e4a6a" font-size="6" font-family="'Share Tech Mono',monospace">CPU</text>
+                  fill="#00d4ff" font-size="10" font-weight="700" font-family="'Share Tech Mono',monospace">0%</text>
+            <text x="35" y="44" text-anchor="middle" fill="#2e4a6a" font-size="6" font-family="'Share Tech Mono',monospace">CPU</text>
           </svg>
         </div>
         <div class="gauge-wrap">
@@ -133,9 +297,8 @@
                     transform="rotate(-90 35 35)"
                     style="transition:stroke-dashoffset 0.6s;filter:drop-shadow(0 0 5px #7b61ff)"/>
             <text id="gauge-ram-val" x="35" y="32" text-anchor="middle"
-                  fill="#7b61ff" font-size="11" font-weight="700" font-family="'Share Tech Mono',monospace">0%</text>
-            <text x="35" y="44" text-anchor="middle"
-                  fill="#2e4a6a" font-size="6" font-family="'Share Tech Mono',monospace">RAM</text>
+                  fill="#7b61ff" font-size="10" font-weight="700" font-family="'Share Tech Mono',monospace">0%</text>
+            <text x="35" y="44" text-anchor="middle" fill="#2e4a6a" font-size="6" font-family="'Share Tech Mono',monospace">RAM</text>
           </svg>
         </div>
         <div class="gauge-wrap">
@@ -147,9 +310,8 @@
                     transform="rotate(-90 35 35)"
                     style="transition:stroke-dashoffset 0.6s;filter:drop-shadow(0 0 5px #00ffb3)"/>
             <text id="gauge-disk-val" x="35" y="32" text-anchor="middle"
-                  fill="#00ffb3" font-size="11" font-weight="700" font-family="'Share Tech Mono',monospace">0%</text>
-            <text x="35" y="44" text-anchor="middle"
-                  fill="#2e4a6a" font-size="6" font-family="'Share Tech Mono',monospace">DISK</text>
+                  fill="#00ffb3" font-size="10" font-weight="700" font-family="'Share Tech Mono',monospace">0%</text>
+            <text x="35" y="44" text-anchor="middle" fill="#2e4a6a" font-size="6" font-family="'Share Tech Mono',monospace">DISK</text>
           </svg>
         </div>
       </div>
