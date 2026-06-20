@@ -7,305 +7,170 @@
 </head>
 <body>
 
-<!-- Ambient background layers -->
-<div class="bg-hex"></div>
-<div class="bg-scan"></div>
-<div class="bg-vignette"></div>
+<!-- Screen corner brackets -->
+<span class="scr-corner tl"></span>
+<span class="scr-corner tr"></span>
+<span class="scr-corner bl"></span>
+<span class="scr-corner br"></span>
 
-<div class="hud">
-
-  <!-- ══ TOP BAR ══════════════════════════════════════════════════════════ -->
-  <header class="hud-top">
-    <div class="hud-top-left">
-      <div class="logo-arc">
-        <svg viewBox="0 0 44 44" class="logo-arc-svg">
-          <circle cx="22" cy="22" r="18" fill="none" stroke="var(--accent)" stroke-width="1.5"
-                  stroke-dasharray="4 3" opacity="0.4"/>
-          <circle cx="22" cy="22" r="12" fill="none" stroke="var(--accent)" stroke-width="1"/>
-          <circle cx="22" cy="22" r="4" fill="var(--accent)" class="logo-core"/>
-        </svg>
-      </div>
-      <div class="logo-text-wrap">
-        <span class="logo-name">MOTI</span>
-        <span class="logo-sub">ARTIFICIAL INTELLIGENCE · ROOM OS v2</span>
-      </div>
+<!-- ══ TOP BAR ═══════════════════════════════════════════════════════════ -->
+<header class="topbar">
+  <div class="tb-logo">
+    <svg viewBox="0 0 34 34" class="logo-svg">
+      <circle cx="17" cy="17" r="14" fill="none" stroke="#00d4ff" stroke-width="1" opacity="0.25"/>
+      <circle cx="17" cy="17" r="9"  fill="none" stroke="#00d4ff" stroke-width="1" opacity="0.5"/>
+      <circle cx="17" cy="17" r="4"  fill="#00d4ff"/>
+      <circle cx="17" cy="17" r="1.5" fill="#ffffff"/>
+    </svg>
+    <div class="logo-text">
+      <div class="logo-name">MOTI</div>
+      <div class="logo-sub">ROOM INTELLIGENCE · OS v2</div>
     </div>
+  </div>
 
-    <div class="hud-clock-wrap">
-      <div class="hud-clock" id="d-clock">00:00:00</div>
-      <div class="hud-date" id="d-date">—</div>
+  <div class="tb-clock">
+    <div class="tb-time" id="d-clock">00:00:00</div>
+    <div class="tb-date" id="d-date">—</div>
+  </div>
+
+  <div class="tb-right">
+    <div class="pill" id="pill-lights"><span class="pill-dot"></span>LIGHTS</div>
+    <div class="pill" id="pill-spotify"><span class="pill-dot"></span>SPOTIFY</div>
+    <a href="/" class="ctrl-link">⚙ CTRL</a>
+  </div>
+</header>
+
+<!-- ══ WIDGET CANVAS ═══════════════════════════════════════════════════════ -->
+<div class="canvas" id="canvas">
+
+  <!-- LIGHTS widget -->
+  <div class="widget" data-wid="lights">
+    <div class="widget-bar">
+      <span class="wi-dot"></span>
+      <span class="wi-title">LIGHTING</span>
+      <span class="wi-drag">⠿</span>
     </div>
-
-    <div class="hud-top-right">
-      <div class="status-pill" id="pill-lights">
-        <span class="pill-dot"></span><span>LIGHTS</span>
-      </div>
-      <div class="status-pill" id="pill-spotify">
-        <span class="pill-dot"></span><span>SPOTIFY</span>
-      </div>
-      <a href="/" class="hud-ctrl-link">⚙ CTRL</a>
+    <div class="widget-body" id="d-lights">
+      <div class="empty-msg">No lights configured</div>
     </div>
-  </header>
+  </div>
 
-  <!-- ══ MAIN ══════════════════════════════════════════════════════════════ -->
-  <main class="hud-main">
-
-    <!-- ── LEFT: Lights ── -->
-    <aside class="hud-panel hud-left">
-      <div class="panel-label">LIGHTING SYSTEM</div>
-      <div id="d-lights" class="lights-stack"></div>
-    </aside>
-
-    <!-- ── CENTER: Core AI ── -->
-    <div class="hud-center">
-
-      <!-- Outer decorative arcs -->
-      <div class="core-shell">
-        <svg class="core-svg" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <filter id="glow-sm">
-              <feGaussianBlur stdDeviation="2" result="b"/>
-              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-            <filter id="glow-md">
-              <feGaussianBlur stdDeviation="5" result="b"/>
-              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-            <filter id="glow-lg">
-              <feGaussianBlur stdDeviation="12" result="b"/>
-              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-            <radialGradient id="core-grad" cx="50%" cy="50%" r="50%">
-              <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.95"/>
-              <stop offset="40%"  stop-color="#00d4ff" stop-opacity="0.9"/>
-              <stop offset="100%" stop-color="#0055aa" stop-opacity="0.1"/>
-            </radialGradient>
-            <radialGradient id="iris-grad" cx="50%" cy="50%" r="50%">
-              <stop offset="0%"   stop-color="#00d4ff" stop-opacity="0.3"/>
-              <stop offset="100%" stop-color="#0a1a30" stop-opacity="0"/>
-            </radialGradient>
-          </defs>
-
-          <!-- Ring 1 — outermost dashed, slow rotate -->
-          <circle class="r-spin-slow" cx="250" cy="250" r="220"
-                  fill="none" stroke="#00d4ff" stroke-width="1"
-                  stroke-dasharray="6 10" opacity="0.25"/>
-
-          <!-- Ring 2 — tick marks ring -->
-          <circle class="r-spin-slow" cx="250" cy="250" r="200"
-                  fill="none" stroke="#00d4ff" stroke-width="0.5"
-                  stroke-dasharray="1 12.44" opacity="0.5"/>
-
-          <!-- Ring 3 — partial arc, counter rotate -->
-          <circle class="r-spin-rev" cx="250" cy="250" r="178"
-                  fill="none" stroke="#00d4ff" stroke-width="1.5"
-                  stroke-dasharray="120 440" opacity="0.7"
-                  filter="url(#glow-sm)"/>
-          <circle class="r-spin-rev" cx="250" cy="250" r="178"
-                  fill="none" stroke="#7b61ff" stroke-width="0.5"
-                  stroke-dasharray="60 500" opacity="0.5"/>
-
-          <!-- Ring 4 — solid mid ring -->
-          <circle cx="250" cy="250" r="155"
-                  fill="none" stroke="#0a2a50" stroke-width="1.5"/>
-          <circle class="r-spin-med" cx="250" cy="250" r="155"
-                  fill="none" stroke="#00d4ff" stroke-width="1"
-                  stroke-dasharray="30 200 60 670" opacity="0.8"
-                  filter="url(#glow-sm)"/>
-
-          <!-- Divider marks on ring 4 -->
-          <g class="r-spin-med" opacity="0.6">
-            <line x1="250" y1="95"  x2="250" y2="108" stroke="#00d4ff" stroke-width="2"/>
-            <line x1="250" y1="95"  x2="250" y2="108" stroke="#00d4ff" stroke-width="2" transform="rotate(45 250 250)"/>
-            <line x1="250" y1="95"  x2="250" y2="108" stroke="#00d4ff" stroke-width="2" transform="rotate(90 250 250)"/>
-            <line x1="250" y1="95"  x2="250" y2="108" stroke="#00d4ff" stroke-width="2" transform="rotate(135 250 250)"/>
-            <line x1="250" y1="95"  x2="250" y2="108" stroke="#00d4ff" stroke-width="2" transform="rotate(180 250 250)"/>
-            <line x1="250" y1="95"  x2="250" y2="108" stroke="#00d4ff" stroke-width="2" transform="rotate(225 250 250)"/>
-            <line x1="250" y1="95"  x2="250" y2="108" stroke="#00d4ff" stroke-width="2" transform="rotate(270 250 250)"/>
-            <line x1="250" y1="95"  x2="250" y2="108" stroke="#00d4ff" stroke-width="2" transform="rotate(315 250 250)"/>
-          </g>
-
-          <!-- Ring 5 — inner data ring -->
-          <circle cx="250" cy="250" r="120"
-                  fill="rgba(0,212,255,0.02)" stroke="#0a2a50" stroke-width="1"/>
-          <circle class="r-spin-rev-fast" cx="250" cy="250" r="120"
-                  fill="none" stroke="#00d4ff" stroke-width="1.5"
-                  stroke-dasharray="40 150 20 540" opacity="0.9"
-                  filter="url(#glow-sm)"/>
-
-          <!-- Core glow backdrop -->
-          <circle cx="250" cy="250" r="80"
-                  fill="url(#iris-grad)"
-                  filter="url(#glow-lg)"/>
-
-          <!-- Core solid ring -->
-          <circle cx="250" cy="250" r="72"
-                  fill="rgba(0,10,24,0.9)"
-                  stroke="#00d4ff" stroke-width="2"
-                  filter="url(#glow-md)"/>
-
-          <!-- Inner iris ring -->
-          <circle class="r-spin-fast" cx="250" cy="250" r="56"
-                  fill="none" stroke="#00d4ff" stroke-width="1"
-                  stroke-dasharray="8 8" opacity="0.6"/>
-
-          <!-- Iris fill -->
-          <circle cx="250" cy="250" r="46"
-                  fill="radial-gradient" fill="rgba(0,212,255,0.06)"/>
-
-          <!-- Central eye -->
-          <ellipse class="iris-pupil" cx="250" cy="250" rx="28" ry="28"
-                   fill="#000810"
-                   stroke="#00d4ff" stroke-width="1.5"
-                   filter="url(#glow-md)"/>
-
-          <!-- Pupil highlight lines (cross) -->
-          <line x1="222" y1="250" x2="278" y2="250" stroke="#00d4ff" stroke-width="0.5" opacity="0.4"/>
-          <line x1="250" y1="222" x2="250" y2="278" stroke="#00d4ff" stroke-width="0.5" opacity="0.4"/>
-
-          <!-- Central core dot -->
-          <circle class="core-pulse" cx="250" cy="250" r="10"
-                  fill="url(#core-grad)" filter="url(#glow-lg)"/>
-          <circle cx="250" cy="250" r="4" fill="#ffffff" opacity="0.95"/>
-
-          <!-- Data readout lines radiating out -->
-          <g opacity="0.35" stroke="#00d4ff" stroke-width="0.5">
-            <line x1="250" y1="130" x2="250" y2="92"/>
-            <line x1="362" y1="250" x2="400" y2="250"/>
-            <line x1="138" y1="250" x2="100" y2="250"/>
-            <line x1="250" y1="370" x2="250" y2="408"/>
-            <line x1="330" y1="170" x2="358" y2="142"/>
-            <line x1="170" y1="330" x2="142" y2="358"/>
-          </g>
-          <!-- Data readout boxes -->
-          <rect x="228" y="78" width="44" height="12" rx="2" fill="#000d1a" stroke="#00d4ff" stroke-width="0.5" opacity="0.7"/>
-          <text x="250" y="88" fill="#00d4ff" font-size="7" text-anchor="middle" font-family="'Share Tech Mono',monospace" id="core-cpu-label">CPU 0%</text>
-          <rect x="362" y="244" width="44" height="12" rx="2" fill="#000d1a" stroke="#00d4ff" stroke-width="0.5" opacity="0.7"/>
-          <text x="384" y="254" fill="#00d4ff" font-size="7" text-anchor="middle" font-family="'Share Tech Mono',monospace" id="core-ram-label">RAM 0%</text>
-          <rect x="406" y="244" width="0" height="0" opacity="0"/>
-        </svg>
-
-        <!-- State label below rings -->
-        <div class="core-state" id="d-char-state">SYSTEM ACTIVE</div>
-      </div>
-
+  <!-- SPOTIFY widget -->
+  <div class="widget" data-wid="spotify">
+    <div class="widget-bar">
+      <span class="wi-dot"></span>
+      <span class="wi-title">AUDIO STREAM</span>
+      <span class="wi-drag">⠿</span>
     </div>
-
-    <!-- ── RIGHT: Spotify ── -->
-    <aside class="hud-panel hud-right">
-      <div class="panel-label">AUDIO STREAM</div>
-
-      <!-- Album art with circular progress ring -->
-      <div class="sp-art-wrap">
-        <svg class="sp-progress-ring" viewBox="0 0 140 140">
-          <circle cx="70" cy="70" r="63" fill="none"
-                  stroke="#0a2a50" stroke-width="4"/>
-          <circle id="sp-ring" cx="70" cy="70" r="63" fill="none"
-                  stroke="#00d4ff" stroke-width="4"
-                  stroke-linecap="round"
-                  stroke-dasharray="395.8 395.8"
-                  stroke-dashoffset="395.8"
-                  transform="rotate(-90 70 70)"
-                  filter="url(#glow-sm)"
-                  style="transition:stroke-dashoffset 0.5s linear"/>
-        </svg>
-        <div class="sp-art" id="d-album-art">♪</div>
-      </div>
-
-      <div class="sp-track"  id="d-track">Nothing playing</div>
-      <div class="sp-artist" id="d-artist">—</div>
-
-      <div class="sp-time-row">
-        <span id="d-prog-cur" class="sp-time">0:00</span>
-        <span id="d-prog-total" class="sp-time">0:00</span>
-      </div>
-
-      <!-- Volume arc -->
-      <div class="vol-row">
-        <span class="vol-icon">VOL</span>
-        <div class="vol-bar">
-          <div class="vol-fill" id="d-vol-fill"></div>
+    <div class="widget-body sp-body">
+      <div class="sp-row">
+        <!-- Album art + circular progress -->
+        <div class="sp-art-wrap">
+          <svg viewBox="0 0 120 120" class="sp-ring-svg">
+            <circle cx="60" cy="60" r="54" fill="none" stroke="#0d1e38" stroke-width="3"/>
+            <circle id="sp-ring" cx="60" cy="60" r="54" fill="none"
+                    stroke="#00d4ff" stroke-width="3" stroke-linecap="round"
+                    stroke-dasharray="339.3 339.3" stroke-dashoffset="339.3"
+                    transform="rotate(-90 60 60)"
+                    style="transition:stroke-dashoffset 0.5s linear"/>
+          </svg>
+          <div class="sp-art" id="d-album-art">♪</div>
         </div>
-        <span class="vol-pct" id="d-vol-pct">—</span>
-      </div>
-
-      <!-- EQ visualizer -->
-      <div class="eq-wrap" id="eq-wrap">
-        <div class="eq-bar-group" id="eq-bars">
-          <span class="eqb"></span><span class="eqb"></span><span class="eqb"></span>
-          <span class="eqb"></span><span class="eqb"></span><span class="eqb"></span>
-          <span class="eqb"></span><span class="eqb"></span><span class="eqb"></span>
-          <span class="eqb"></span><span class="eqb"></span><span class="eqb"></span>
+        <!-- Track info -->
+        <div class="sp-info">
+          <div class="sp-track"  id="d-track">Nothing playing</div>
+          <div class="sp-artist" id="d-artist">—</div>
+          <div class="sp-times">
+            <span id="d-prog-cur"   class="sp-t">0:00</span>
+            <span id="d-prog-total" class="sp-t">0:00</span>
+          </div>
+          <div class="vol-row">
+            <span class="vol-lbl">VOL</span>
+            <div class="vol-bar"><div class="vol-fill" id="d-vol-fill"></div></div>
+            <span class="vol-val" id="d-vol-pct">—</span>
+          </div>
         </div>
       </div>
-    </aside>
-
-  </main>
-
-  <!-- ══ BOTTOM BAR ════════════════════════════════════════════════════════ -->
-  <footer class="hud-bottom">
-
-    <!-- Arc gauges -->
-    <div class="gauges-row">
-      <div class="arc-gauge-wrap">
-        <svg class="arc-svg" viewBox="0 0 80 80">
-          <circle cx="40" cy="40" r="32" fill="none" stroke="#0a2a50" stroke-width="5"/>
-          <circle id="arc-cpu" cx="40" cy="40" r="32" fill="none"
-                  stroke="#00d4ff" stroke-width="5" stroke-linecap="round"
-                  stroke-dasharray="201.1 201.1" stroke-dashoffset="201.1"
-                  transform="rotate(-90 40 40)"
-                  style="transition:stroke-dashoffset 0.5s;filter:drop-shadow(0 0 4px #00d4ff)"/>
-          <text x="40" y="36" fill="#00d4ff" font-size="10" font-weight="700"
-                text-anchor="middle" font-family="'Share Tech Mono',monospace" id="gauge-cpu-val">0%</text>
-          <text x="40" y="48" fill="#3a5a8a" font-size="6"
-                text-anchor="middle" font-family="'Share Tech Mono',monospace">CPU</text>
-        </svg>
-      </div>
-      <div class="arc-gauge-wrap">
-        <svg class="arc-svg" viewBox="0 0 80 80">
-          <circle cx="40" cy="40" r="32" fill="none" stroke="#0a2a50" stroke-width="5"/>
-          <circle id="arc-ram" cx="40" cy="40" r="32" fill="none"
-                  stroke="#7b61ff" stroke-width="5" stroke-linecap="round"
-                  stroke-dasharray="201.1 201.1" stroke-dashoffset="201.1"
-                  transform="rotate(-90 40 40)"
-                  style="transition:stroke-dashoffset 0.5s;filter:drop-shadow(0 0 4px #7b61ff)"/>
-          <text x="40" y="36" fill="#7b61ff" font-size="10" font-weight="700"
-                text-anchor="middle" font-family="'Share Tech Mono',monospace" id="gauge-ram-val">0%</text>
-          <text x="40" y="48" fill="#3a5a8a" font-size="6"
-                text-anchor="middle" font-family="'Share Tech Mono',monospace">RAM</text>
-        </svg>
-      </div>
-      <div class="arc-gauge-wrap">
-        <svg class="arc-svg" viewBox="0 0 80 80">
-          <circle cx="40" cy="40" r="32" fill="none" stroke="#0a2a50" stroke-width="5"/>
-          <circle id="arc-disk" cx="40" cy="40" r="32" fill="none"
-                  stroke="#00ffb3" stroke-width="5" stroke-linecap="round"
-                  stroke-dasharray="201.1 201.1" stroke-dashoffset="201.1"
-                  transform="rotate(-90 40 40)"
-                  style="transition:stroke-dashoffset 0.5s;filter:drop-shadow(0 0 4px #00ffb3)"/>
-          <text x="40" y="36" fill="#00ffb3" font-size="10" font-weight="700"
-                text-anchor="middle" font-family="'Share Tech Mono',monospace" id="gauge-disk-val">0%</text>
-          <text x="40" y="48" fill="#3a5a8a" font-size="6"
-                text-anchor="middle" font-family="'Share Tech Mono',monospace">DISK</text>
-        </svg>
+      <!-- EQ bars -->
+      <div class="eq-row" id="eq-bars">
+        <span class="eqb"></span><span class="eqb"></span><span class="eqb"></span>
+        <span class="eqb"></span><span class="eqb"></span><span class="eqb"></span>
+        <span class="eqb"></span><span class="eqb"></span><span class="eqb"></span>
+        <span class="eqb"></span><span class="eqb"></span><span class="eqb"></span>
       </div>
     </div>
+  </div>
 
-    <!-- Notes ticker -->
-    <div class="ticker-wrap">
-      <span class="ticker-label">MEMO</span>
-      <div class="ticker-track">
-        <div class="ticker-inner" id="d-notes-ticker">—</div>
+  <!-- PC STATS widget -->
+  <div class="widget" data-wid="pc">
+    <div class="widget-bar">
+      <span class="wi-dot"></span>
+      <span class="wi-title">SYSTEM RESOURCES</span>
+      <span class="wi-drag">⠿</span>
+    </div>
+    <div class="widget-body pc-body">
+      <div class="gauges-row">
+        <div class="gauge-wrap">
+          <svg viewBox="0 0 70 70" class="gauge-svg">
+            <circle cx="35" cy="35" r="28" fill="none" stroke="#0d1e38" stroke-width="4"/>
+            <circle id="arc-cpu" cx="35" cy="35" r="28" fill="none" stroke="#00d4ff"
+                    stroke-width="4" stroke-linecap="round"
+                    stroke-dasharray="175.9 175.9" stroke-dashoffset="175.9"
+                    transform="rotate(-90 35 35)"
+                    style="transition:stroke-dashoffset 0.6s;filter:drop-shadow(0 0 5px #00d4ff)"/>
+            <text id="gauge-cpu-val" x="35" y="32" text-anchor="middle"
+                  fill="#00d4ff" font-size="11" font-weight="700" font-family="'Share Tech Mono',monospace">0%</text>
+            <text x="35" y="44" text-anchor="middle"
+                  fill="#2e4a6a" font-size="6" font-family="'Share Tech Mono',monospace">CPU</text>
+          </svg>
+        </div>
+        <div class="gauge-wrap">
+          <svg viewBox="0 0 70 70" class="gauge-svg">
+            <circle cx="35" cy="35" r="28" fill="none" stroke="#0d1e38" stroke-width="4"/>
+            <circle id="arc-ram" cx="35" cy="35" r="28" fill="none" stroke="#7b61ff"
+                    stroke-width="4" stroke-linecap="round"
+                    stroke-dasharray="175.9 175.9" stroke-dashoffset="175.9"
+                    transform="rotate(-90 35 35)"
+                    style="transition:stroke-dashoffset 0.6s;filter:drop-shadow(0 0 5px #7b61ff)"/>
+            <text id="gauge-ram-val" x="35" y="32" text-anchor="middle"
+                  fill="#7b61ff" font-size="11" font-weight="700" font-family="'Share Tech Mono',monospace">0%</text>
+            <text x="35" y="44" text-anchor="middle"
+                  fill="#2e4a6a" font-size="6" font-family="'Share Tech Mono',monospace">RAM</text>
+          </svg>
+        </div>
+        <div class="gauge-wrap">
+          <svg viewBox="0 0 70 70" class="gauge-svg">
+            <circle cx="35" cy="35" r="28" fill="none" stroke="#0d1e38" stroke-width="4"/>
+            <circle id="arc-disk" cx="35" cy="35" r="28" fill="none" stroke="#00ffb3"
+                    stroke-width="4" stroke-linecap="round"
+                    stroke-dasharray="175.9 175.9" stroke-dashoffset="175.9"
+                    transform="rotate(-90 35 35)"
+                    style="transition:stroke-dashoffset 0.6s;filter:drop-shadow(0 0 5px #00ffb3)"/>
+            <text id="gauge-disk-val" x="35" y="32" text-anchor="middle"
+                  fill="#00ffb3" font-size="11" font-weight="700" font-family="'Share Tech Mono',monospace">0%</text>
+            <text x="35" y="44" text-anchor="middle"
+                  fill="#2e4a6a" font-size="6" font-family="'Share Tech Mono',monospace">DISK</text>
+          </svg>
+        </div>
+      </div>
+      <div class="net-grid">
+        <div class="net-row"><span class="net-lbl">↑</span><span class="net-val" id="d-net-up">0 B/s</span></div>
+        <div class="net-row"><span class="net-lbl">↓</span><span class="net-val" id="d-net-down">0 B/s</span></div>
       </div>
     </div>
+  </div>
 
-    <!-- Net stats -->
-    <div class="net-stats">
-      <div class="net-row"><span class="net-lbl">↑</span><span class="net-val" id="d-net-up">0 KB/s</span></div>
-      <div class="net-row"><span class="net-lbl">↓</span><span class="net-val" id="d-net-down">0 KB/s</span></div>
+  <!-- NOTES widget -->
+  <div class="widget" data-wid="notes">
+    <div class="widget-bar">
+      <span class="wi-dot"></span>
+      <span class="wi-title">MEMO</span>
+      <span class="wi-drag">⠿</span>
     </div>
-
-  </footer>
+    <div class="widget-body notes-body" id="d-notes">
+      <div class="empty-msg">No notes</div>
+    </div>
+  </div>
 
 </div>
 
