@@ -14,10 +14,11 @@ try:
 except ImportError:
     SPOTIPY_AVAILABLE = False
 
-_sp: Optional[object] = None
-_auth_manager = None
 CACHE_PATH = ".spotify_cache"
 SCOPE = "user-read-playback-state user-modify-playback-state user-read-currently-playing"
+
+_auth_manager: Optional["SpotifyOAuth"] = None
+_sp: Optional[object] = None  # spotipy.Spotify(auth=<token>) — no auth_manager
 
 
 def _make_auth_manager() -> "SpotifyOAuth":
@@ -40,42 +41,82 @@ def get_auth_url() -> Optional[str]:
 
 
 def handle_callback(code: str) -> bool:
-    global _sp, _auth_manager
+    """Exchange auth code for tokens and persist to cache."""
+    global _auth_manager, _sp
     if not _auth_manager:
         _auth_manager = _make_auth_manager()
     try:
-        token = _auth_manager.get_access_token(code, as_dict=False)
-        if token:
-            _sp = spotipy.Spotify(auth_manager=_auth_manager)
-            log.info("Spotify authenticated successfully")
+        token_info = _auth_manager.get_access_token(code, as_dict=True, check_cache=False)
+        if token_info and token_info.get("access_token"):
+            _sp = spotipy.Spotify(auth=token_info["access_token"])
+            log.info("Spotify authenticated OK")
             return True
     except Exception as e:
         log.error("Spotify callback error: %s", e)
     return False
 
 
-def _ensure_client() -> bool:
-    """Return True only if we have a valid, cached Spotify session.
-    Never triggers interactive auth — that requires an explicit /api/spotify/auth call."""
-    global _sp, _auth_manager
-    if _sp:
-        return True
+def _get_valid_access_token() -> Optional[str]:
+    """
+    Returns a live access token from cache without EVER triggering interactive auth.
+    Handles refresh manually so spotipy never gets a chance to call get_auth_response().
+    """
     if not SPOTIPY_AVAILABLE or not settings.SPOTIFY_CLIENT_ID:
-        return False
-    # Only auto-restore from cache; don't prompt for a new auth flow here
+        return None
     if not os.path.exists(CACHE_PATH):
-        return False
+        return None
+
     try:
-        _auth_manager = _make_auth_manager()
-        token_info = _auth_manager.get_cached_token()
-        if not token_info:
-            return False
-        _sp = spotipy.Spotify(auth_manager=_auth_manager)
-        log.info("Spotify restored from cache")
-        return True
+        am = _make_auth_manager()
+        cached = am.cache_handler.get_cached_token()
+        if not cached or not cached.get("access_token"):
+            return None
+
+        if not am.is_token_expired(cached):
+            return cached["access_token"]
+
+        # Token expired — try refresh
+        refresh_token = cached.get("refresh_token")
+        if not refresh_token:
+            log.warning("Spotify: no refresh_token in cache — re-auth required")
+            _clear_cache()
+            return None
+
+        new_token = am.refresh_access_token(refresh_token)
+        if new_token and new_token.get("access_token"):
+            return new_token["access_token"]
+
+        # Refresh rejected (e.g. wrong redirect_uri in old cache) — nuke stale cache
+        log.warning("Spotify: token refresh failed — deleting stale cache, re-auth required")
+        _clear_cache()
+        return None
+
     except Exception as e:
-        log.debug("Spotify cache restore failed: %s", e)
+        log.debug("Spotify token fetch error: %s", e)
+        _clear_cache()
+        return None
+
+
+def _clear_cache():
+    try:
+        if os.path.exists(CACHE_PATH):
+            os.remove(CACHE_PATH)
+            log.info("Spotify: cleared stale .spotify_cache")
+    except Exception:
+        pass
+
+
+def _ensure_client() -> bool:
+    """Build/refresh the Spotify client from the cache token. Never blocks."""
+    global _sp
+    token = _get_valid_access_token()
+    if not token:
+        _sp = None
         return False
+    # Always create with raw access token — no auth_manager so spotipy
+    # can never fall back to interactive auth.
+    _sp = spotipy.Spotify(auth=token)
+    return True
 
 
 async def refresh():
@@ -114,13 +155,11 @@ async def play_pause():
         return
     try:
         pb = await asyncio.get_event_loop().run_in_executor(None, _sp.current_playback)
-        if pb and pb.get("is_playing"):
-            await asyncio.get_event_loop().run_in_executor(None, _sp.pause_playback)
-        else:
-            await asyncio.get_event_loop().run_in_executor(None, _sp.start_playback)
+        fn = _sp.pause_playback if pb and pb.get("is_playing") else _sp.start_playback
+        await asyncio.get_event_loop().run_in_executor(None, fn)
         await refresh()
     except Exception as e:
-        log.error("Spotify play/pause error: %s", e)
+        log.error("Spotify play/pause: %s", e)
 
 
 async def next_track():
@@ -160,7 +199,6 @@ async def toggle_shuffle():
 async def set_repeat(mode: str):
     if not _ensure_client():
         return
-    modes = ["off", "track", "context"]
-    if mode in modes:
+    if mode in ("off", "track", "context"):
         await asyncio.get_event_loop().run_in_executor(None, _sp.repeat, mode)
         await push_update("spotify", {"repeat": mode})
