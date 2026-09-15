@@ -63,6 +63,12 @@
             recognize an actual trash can. Instead, on first entry it asks you to tap a real spot
             on your floor (via WebXR surface detection) to anchor the virtual trash bin there.
           </div>
+          <div class="mr-note">
+            On a Meta Quest: WebXR only runs over HTTPS, so open this from
+            <strong style="color:var(--accent)">start_quest.bat</strong> (not start.bat) and browse to the
+            <code>https://…:8443/mr</code> address it prints, in the Quest Browser. You'll see a one-time
+            "connection isn't private" warning for the self-signed certificate — tap Advanced → Visit site.
+          </div>
         </div>
       </div>
     </div>

@@ -13,3 +13,4 @@ python-multipart==0.0.32
 colorlog==6.10.1
 schedule==1.2.2
 psutil==7.2.2
+cryptography==50.0.1

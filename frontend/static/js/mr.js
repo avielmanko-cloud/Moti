@@ -942,8 +942,16 @@ let currentMode = 'none';
 let xrSession = null;
 
 async function checkSupport() {
+  const isSecure = window.isSecureContext;
   if (!navigator.xr) {
-    supportStatus.textContent = 'WebXR not available — use Preview';
+    if (!isSecure) {
+      // A Quest reaches this over the LAN (never "localhost"), and WebXR only
+      // exposes navigator.xr in a secure context — so this is almost always
+      // the actual cause of "WebXR not available" on a headset.
+      supportStatus.textContent = 'Open this over HTTPS to use MR on a headset (see start_quest.bat)';
+    } else {
+      supportStatus.textContent = 'WebXR not available — use Preview';
+    }
     btnAR.disabled = true; btnVR.disabled = true;
     return;
   }
