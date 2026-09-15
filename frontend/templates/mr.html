@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>MOTI — Mixed Reality</title>
+  <link rel="stylesheet" href="/static/css/style.css"/>
+  <link rel="stylesheet" href="/static/css/mr.css"/>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "/static/js/vendor/three/three.module.js",
+      "three/addons/": "/static/js/vendor/three/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body class="mr-body">
+
+  <!-- ══ 2D landing / fallback UI (hidden once an XR session starts, reused as domOverlay root) ══ -->
+  <div id="mr-overlay">
+
+    <header class="mr-topbar">
+      <div class="topbar-logo">
+        <div class="logo-mark">M</div>
+        <div>
+          <div class="logo-text">MOTI</div>
+          <div class="logo-sub">MIXED REALITY</div>
+        </div>
+      </div>
+      <a href="/" class="btn sm">← Control Panel</a>
+    </header>
+
+    <div id="mr-landing" class="mr-landing">
+      <div class="card mr-card">
+        <div class="card-header">
+          <div class="card-title"><span class="card-title-icon">🥽</span> Moti Holo-Room</div>
+          <div class="card-status" id="mr-support-status">Checking WebXR…</div>
+        </div>
+        <p class="mr-desc">
+          Your dashboard, floating around you. Every card from the control panel — lights, Spotify,
+          notes, PC stats — becomes a holographic window you can grab, move and pinch shut.
+          Don't want one? Throw it in the trash bin to dismiss it.
+        </p>
+
+        <div class="mr-actions">
+          <button class="btn primary lg" id="btn-enter-ar">🌐 Enter Mixed Reality</button>
+          <button class="btn lg" id="btn-enter-vr">🕶 Enter VR (virtual room)</button>
+          <button class="btn lg" id="btn-preview">🖥 Preview on screen</button>
+        </div>
+
+        <div class="mr-howto">
+          <div class="mr-howto-title">HOW TO USE</div>
+          <ul>
+            <li><strong>Grab</strong> — pinch (thumb + index) near a window's title bar and move your hand to drag it.</li>
+            <li><strong>Click</strong> — poke a button on a window with your fingertip, like pressing a real button.</li>
+            <li><strong>Throw away</strong> — while grabbing a window, carry it to the glowing trash bin and release the pinch to dismiss it.</li>
+            <li><strong>Restore</strong> — poke "↺ Restore All" on the dock panel that follows you to bring dismissed windows back.</li>
+            <li>No hand tracking? Use your controller's trigger to grab and click instead.</li>
+          </ul>
+          <div class="mr-note">
+            Note: browsers don't expose real camera pixels to web pages, so Moti can't visually
+            recognize an actual trash can. Instead, on first entry it asks you to tap a real spot
+            on your floor (via WebXR surface detection) to anchor the virtual trash bin there.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Shown once inside an XR session, via dom-overlay -->
+    <div id="mr-xr-hint" class="mr-xr-hint" hidden></div>
+    <button id="btn-exit-xr" class="mr-exit-btn" hidden>✕ Exit</button>
+  </div>
+
+  <!-- Desktop preview canvas mount point (three.js appends its own <canvas> here) -->
+  <div id="mr-scene-root" class="mr-scene-root"></div>
+
+  <script type="module" src="/static/js/mr.js"></script>
+</body>
+</html>

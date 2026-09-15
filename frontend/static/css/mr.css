@@ -1,0 +1,132 @@
+/* ── MOTI Mixed Reality shell ── */
+[hidden] { display: none !important; }
+
+html, body.mr-body {
+  height: 100%;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 20%, #0d1a33 0%, var(--bg) 70%);
+}
+
+.mr-scene-root {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+}
+.mr-scene-root canvas { display: block; touch-action: none; }
+
+#mr-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+}
+#mr-overlay > * { pointer-events: auto; }
+
+.mr-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: linear-gradient(180deg, rgba(7,11,20,0.85), transparent);
+}
+
+.mr-landing {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.mr-card {
+  max-width: 620px;
+  width: 100%;
+  background: rgba(13,21,38,0.9);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 0 40px rgba(0,212,255,0.08);
+}
+
+.mr-desc {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+  margin-bottom: 20px;
+}
+
+.mr-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+.btn.lg { padding: 12px 20px; font-size: 14px; }
+
+.mr-howto {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+.mr-howto-title {
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  margin-bottom: 10px;
+}
+.mr-howto ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.mr-howto ul strong { color: var(--accent); }
+.mr-note {
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--text-dim);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  line-height: 1.6;
+}
+
+.mr-xr-hint {
+  position: fixed;
+  left: 50%;
+  bottom: env(safe-area-inset-bottom, 24px);
+  transform: translateX(-50%);
+  background: rgba(13,21,38,0.85);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 8px 18px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--accent);
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.mr-exit-btn {
+  position: fixed;
+  top: env(safe-area-inset-top, 16px);
+  right: 16px;
+  background: rgba(13,21,38,0.85);
+  border: 1px solid var(--red);
+  color: var(--red);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-family: var(--font);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (max-width: 480px) {
+  .mr-actions { flex-direction: column; }
+  .mr-actions .btn { width: 100%; justify-content: center; }
+}

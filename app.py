@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.requests import Request
 from fastapi.websockets import WebSocket
+from fastapi.responses import RedirectResponse
 
 from backend.core.config import settings
 from backend.core.state import state
@@ -41,6 +42,16 @@ async def index(request: Request):
 @app.get("/display")
 async def display(request: Request):
     return templates.TemplateResponse(request=request, name="display.html")
+
+
+@app.get("/mr")
+async def mixed_reality(request: Request):
+    return templates.TemplateResponse(request=request, name="mr.html")
+
+
+@app.get("/vr")
+async def vr_alias():
+    return RedirectResponse(url="/mr")
 
 
 @app.websocket("/ws")
