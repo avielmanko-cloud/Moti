@@ -23,6 +23,13 @@ const POKE_DEPTH = 0.035;       // m — fingertip band in front of a window tha
 const POKE_COOLDOWN = 400;      // ms between repeat pokes of the same button
 const TRASH_CAPTURE_RADIUS = 0.32; // m — release-inside-this radius of the bin = dismiss
 const MIN_HOLD_DIST = 0.3, MAX_HOLD_DIST = 2.6; // m — how far a settled window may drift from user
+const GRAB_STIFFNESS = 220;     // spring pull toward the live hand target — higher = snappier
+const GRAB_DAMPING = 0.78;      // velocity kept per 1/60s — lower = more viscous, less overshoot
+const TWO_HAND_RADIUS = GRAB_RADIUS * 2.2; // m — second hand may grab anywhere on an already-held window
+
+// ── Scratch objects reused inside the per-frame loop to avoid GC churn ──────
+const _vA = new THREE.Vector3();
+const _vB = new THREE.Vector3();
 
 // ── DOM ─────────────────────────────────────────────────────────────────────
 const sceneRoot = document.getElementById('mr-scene-root');
@@ -56,6 +63,8 @@ scene.add(hemi, key);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0, 1.5, 0);
 controls.enableDamping = true;
+controls.minPolarAngle = 0.15;
+controls.maxPolarAngle = Math.PI * 0.85; // keep desktop preview from flipping upside-down on a stray drag
 controls.enabled = false; // only for desktop preview
 
 window.addEventListener('resize', () => {
@@ -110,6 +119,7 @@ for (let i = 0; i < PARTICLE_COUNT; i++) {
   });
 }
 scene.add(particleMesh);
+const _particleDummy = new THREE.Object3D(); // reused every frame — avoids allocating per particle
 
 // ── Live Moti state (mirrors app.js) ────────────────────────────────────────
 let state = { lights: {}, spotify: {}, pc: {}, notes: { items: [] }, system: {} };
@@ -210,6 +220,54 @@ function drawButton(ctx, rect, label, opts = {}) {
   ctx.textAlign = 'left';
 }
 
+// ── Holopanel shell: glass backing + glow frame + corner brackets + halo ────
+// Gives each window real depth/parallax instead of a single flat billboard —
+// the canvas-texture content plane is unchanged, this just dresses it in 3D.
+const haloTexture = (() => {
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+  g.addColorStop(0, 'rgba(255,255,255,0.55)');
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 128, 128);
+  return new THREE.CanvasTexture(c);
+})();
+
+function buildEdgeFrame(w, h, colorHex) {
+  const group = new THREE.Group();
+  const t = 0.0025;
+  const mat = new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.85 });
+  const top = new THREE.Mesh(new THREE.PlaneGeometry(w, t), mat); top.position.y = h / 2;
+  const bottom = new THREE.Mesh(new THREE.PlaneGeometry(w, t), mat); bottom.position.y = -h / 2;
+  const left = new THREE.Mesh(new THREE.PlaneGeometry(t, h), mat); left.position.x = -w / 2;
+  const right = new THREE.Mesh(new THREE.PlaneGeometry(t, h), mat); right.position.x = w / 2;
+  group.add(top, bottom, left, right);
+  return group;
+}
+
+function buildCornerBrackets(w, h, colorHex) {
+  const group = new THREE.Group();
+  const len = Math.min(w, h) * 0.16;
+  const t = 0.0032;
+  const mat = new THREE.MeshBasicMaterial({ color: colorHex });
+  [[-w / 2, h / 2, 1, -1], [w / 2, h / 2, -1, -1], [-w / 2, -h / 2, 1, 1], [w / 2, -h / 2, -1, 1]]
+    .forEach(([cx, cy, sx, sy]) => {
+      const hbar = new THREE.Mesh(new THREE.PlaneGeometry(len, t), mat);
+      hbar.position.set(cx + (sx * len) / 2, cy, 0);
+      const vbar = new THREE.Mesh(new THREE.PlaneGeometry(t, len), mat);
+      vbar.position.set(cx, cy + (sy * len) / 2, 0);
+      group.add(hbar, vbar);
+    });
+  return group;
+}
+
+function easeOutBack(x) {
+  const c1 = 1.70158, c3 = c1 + 1;
+  return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
+}
+
 // ── HoloWindow ───────────────────────────────────────────────────────────────
 class HoloWindow {
   constructor(id, { title, icon, w = 0.56, h = 0.36, canvasW = 720, canvasH = 460, fixed = false }) {
@@ -229,19 +287,50 @@ class HoloWindow {
     this.texture = new THREE.CanvasTexture(this.canvas);
     this.texture.colorSpace = THREE.SRGBColorSpace;
 
+    const accentColor = fixed ? COLOR.border : COLOR.accent;
+    this.group = new THREE.Group();
+
+    // lit glass backing — responds to the scene lights, sells real depth behind the content
+    this.backing = new THREE.Mesh(
+      new THREE.PlaneGeometry(w * 1.04, h * 1.06),
+      new THREE.MeshStandardMaterial({ color: COLOR.surface, transparent: true, opacity: 0.55, roughness: 0.45, metalness: 0.1, side: THREE.DoubleSide })
+    );
+    this.backing.position.z = -0.006;
+    this.group.add(this.backing);
+
+    // content plane — the live canvas, unlit so text stays crisp
     const geo = new THREE.PlaneGeometry(w, h);
     const mat = new THREE.MeshBasicMaterial({ map: this.texture, transparent: true, side: THREE.DoubleSide });
     this.mesh = new THREE.Mesh(geo, mat);
-    this.group = new THREE.Group();
     this.group.add(this.mesh);
+
+    // thin glowing edge + corner brackets, floating slightly in front for parallax
+    this.frame = buildEdgeFrame(w, h, accentColor);
+    this.frame.position.z = 0.004;
+    this.group.add(this.frame);
+    this.corners = buildCornerBrackets(w, h, accentColor);
+    this.corners.position.z = 0.0055;
+    this.group.add(this.corners);
+
+    // soft outer glow halo — cheap faked bloom, no post-processing pass
+    this.halo = new THREE.Mesh(
+      new THREE.PlaneGeometry(w * 1.6, h * 1.6),
+      new THREE.MeshBasicMaterial({ map: haloTexture, color: accentColor, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false })
+    );
+    this.halo.position.z = -0.012;
+    this.group.add(this.halo);
 
     this.anchor = new THREE.Vector3();
     this.velocity = new THREE.Vector3();
     this.grabbedBy = null; // inputId currently holding this window
-    this.grabOffset = new THREE.Vector3();
     this.bobPhase = Math.random() * Math.PI * 2;
-    this.state = 'idle'; // idle | grabbed | settling | trashing | closed
+    this.state = 'idle'; // idle | grabbed | settling | materializing | trashing | closed
+    this.baseScale = 1;   // user-adjustable via two-hand resize
+    this.manualYaw = 0;   // extra yaw on top of the auto-billboard, from two-hand rotate
+    this.twoHand = null;  // { primaryId, secondaryId, startDist, startAngle, startScale, startYaw }
+    this.hasMaterialized = false;
 
+    this.group.scale.setScalar(0.001);
     scene.add(this.group);
   }
 
@@ -259,10 +348,21 @@ class HoloWindow {
 
   setAnchor(v) { this.anchor.copy(v); this.group.position.copy(v); }
 
+  playMaterialize() {
+    this.state = 'materializing';
+    this.materializeStart = performance.now();
+    spawnScanRing(this.group.position, this.fixed ? COLOR.border : COLOR.accent, 0.02, Math.max(this.width, this.height) * 0.95, 500);
+  }
+
   dispose() {
+    // every child's geometry/material is its own instance (not shared across
+    // windows); haloTexture IS shared but disposing a material never disposes
+    // the texture it maps, so this traversal can't touch other windows.
     scene.remove(this.group);
-    this.mesh.geometry.dispose();
-    this.mesh.material.dispose();
+    this.group.traverse((obj) => {
+      if (obj.geometry) obj.geometry.dispose();
+      if (obj.material) obj.material.dispose();
+    });
     this.texture.dispose();
   }
 }
@@ -513,8 +613,30 @@ function getRightXZ(forward) {
 
 let roomAnchor = null; // { pos: Vector3 (xz + eye height), forward, right }
 
+// ── Layout persistence — remembers where you left each window relative to the
+// room, so reopening the app on a reload puts things back (e.g. "on the table")
+// instead of always resetting to the default arc. Real WebXR persistent
+// anchors are still experimental/inconsistent across Quest Browser versions,
+// so this uses a simpler, reliable approximation: relative-to-room-origin.
+const LAYOUT_KEY = 'moti-mr-layout-v1';
+function loadLayout() {
+  try { return JSON.parse(localStorage.getItem(LAYOUT_KEY) || '{}'); } catch (err) { return {}; }
+}
+function saveLayoutFor(win) {
+  if (!roomAnchor || win.fixed) return;
+  try {
+    const all = loadLayout();
+    all[win.id] = {
+      dx: win.anchor.x - roomAnchor.pos.x, dy: win.anchor.y, dz: win.anchor.z - roomAnchor.pos.z,
+      scale: win.baseScale, yaw: win.manualYaw,
+    };
+    localStorage.setItem(LAYOUT_KEY, JSON.stringify(all));
+  } catch (err) { /* storage optional */ }
+}
+
 function layoutWorld(anchor) {
   roomAnchor = anchor;
+  const saved = loadLayout();
   const { pos, forward, right } = anchor;
   const arc = [
     ['lights', -45, -0.05, 1.25],
@@ -526,12 +648,20 @@ function layoutWorld(anchor) {
   arc.forEach(([id, deg, hOff, radius]) => {
     const win = windows.get(id);
     if (!win) return;
-    const rad = (deg * Math.PI) / 180;
-    const dir = forward.clone().multiplyScalar(Math.cos(rad)).add(right.clone().multiplyScalar(Math.sin(rad)));
-    const p = pos.clone().add(dir.multiplyScalar(radius));
-    p.y = pos.y + hOff;
+    let p;
+    if (saved[id]) {
+      p = new THREE.Vector3(pos.x + saved[id].dx, saved[id].dy, pos.z + saved[id].dz);
+      win.baseScale = saved[id].scale || 1;
+      win.manualYaw = saved[id].yaw || 0;
+    } else {
+      const rad = (deg * Math.PI) / 180;
+      const dir = forward.clone().multiplyScalar(Math.cos(rad)).add(right.clone().multiplyScalar(Math.sin(rad)));
+      p = pos.clone().add(dir.multiplyScalar(radius));
+      p.y = pos.y + hOff;
+    }
     win.setAnchor(p);
     win.velocity.set(0, 0, 0);
+    if (!win.hasMaterialized) { win.hasMaterialized = true; win.playMaterialize(); }
   });
 
   placeTrashBinDefault(anchor);
@@ -548,11 +678,11 @@ function updateDockFollow(dt) {
   billboardY(dock.group, camera.position);
 }
 
-function billboardY(group, camPos) {
+function billboardY(group, camPos, extraYaw = 0) {
   const dx = camPos.x - group.position.x;
   const dz = camPos.z - group.position.z;
   const yaw = Math.atan2(dx, dz);
-  group.rotation.set(0, yaw, 0);
+  group.rotation.set(0, yaw + extraYaw, 0);
 }
 
 // ── Trash bin ────────────────────────────────────────────────────────────────
@@ -627,6 +757,37 @@ function placeTrashBinAt(pose) {
   trashBin.visible = true;
 }
 
+// ── JARVIS-style transient effects — a small pooled set of expanding, fading
+// "scan rings" used for lock-on, materialize-in and trash feedback. Cheap: one
+// shared geometry, billboarded like the windows, auto-removed when done.
+const activeEffects = [];
+const ringGeo = new THREE.RingGeometry(0.97, 1, 40);
+
+function spawnScanRing(position, colorHex, startRadius, endRadius, duration) {
+  const mat = new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.8, side: THREE.DoubleSide, depthWrite: false });
+  const ring = new THREE.Mesh(ringGeo, mat);
+  ring.position.copy(position);
+  ring.scale.setScalar(Math.max(0.001, startRadius));
+  scene.add(ring);
+  activeEffects.push({ obj: ring, mat, start: performance.now(), duration, startRadius, endRadius });
+}
+
+function updateEffects() {
+  for (let i = activeEffects.length - 1; i >= 0; i--) {
+    const fx = activeEffects[i];
+    const t = (performance.now() - fx.start) / fx.duration;
+    if (t >= 1) {
+      scene.remove(fx.obj);
+      fx.mat.dispose();
+      activeEffects.splice(i, 1);
+      continue;
+    }
+    fx.obj.scale.setScalar(THREE.MathUtils.lerp(fx.startRadius, fx.endRadius, t));
+    fx.mat.opacity = 0.8 * (1 - t);
+    billboardY(fx.obj, camera.position);
+  }
+}
+
 // ── Placement (hit-test) mode for AR ────────────────────────────────────────
 let placementMode = false;
 let hitTestSource = null;
@@ -690,36 +851,88 @@ function beginGrab(inputId, win, point) {
   win.grabbedBy = inputId;
   win.state = 'grabbed';
   win.velocity.set(0, 0, 0);
-  grabMap.set(inputId, {
-    win, offset: win.group.position.clone().sub(point), lastPoint: point.clone(), velocity: new THREE.Vector3(),
-  });
+  grabMap.set(inputId, { win, offset: win.group.position.clone().sub(point) });
+  spawnScanRing(win.group.position, COLOR.accent, 0.01, Math.max(win.width, win.height) * 0.65, 350);
+}
+
+// Spring-follow instead of position = hand + offset: the window's rendered
+// position chases the live hand target with stiffness/damping, so it lags
+// and settles like a held object instead of snapping rigidly to the hand.
+function springToward(win, target, dt) {
+  _vA.copy(target).sub(win.group.position).multiplyScalar(GRAB_STIFFNESS);
+  win.velocity.addScaledVector(_vA, dt);
+  win.velocity.multiplyScalar(Math.pow(GRAB_DAMPING, dt * 60));
+  win.group.position.addScaledVector(win.velocity, dt);
 }
 
 function updateGrab(inputId, point, dt) {
   const g = grabMap.get(inputId);
-  if (!g) return;
-  const newPos = point.clone().add(g.offset);
-  if (dt > 0) g.velocity.copy(newPos).sub(g.win.group.position).divideScalar(dt);
-  g.win.group.position.copy(newPos);
-  g.lastPoint = point.clone();
+  if (!g || dt <= 0) return;
+  _vB.copy(point).add(g.offset);
+  springToward(g.win, _vB, dt);
 }
 
 function endGrab(inputId) {
   const g = grabMap.get(inputId);
   if (!g) return;
-  const { win, velocity } = g;
+  const { win } = g;
   grabMap.delete(inputId);
   win.grabbedBy = null;
+  if (win.twoHand) endTwoHand(win);
 
   const flatDist = trashBin.visible ? win.group.position.distanceTo(trashBin.position) : Infinity;
   if (flatDist < TRASH_CAPTURE_RADIUS) {
     trashify(win);
   } else {
     win.state = 'settling';
-    win.velocity.copy(velocity).clampLength(0, 1.5);
+    win.velocity.clampLength(0, 2.2); // keep the spring's natural throw, just bounded
     win.anchor.copy(win.group.position);
     clampToReach(win);
+    saveLayoutFor(win); // save now rather than waiting for velocity to fully decay below the idle threshold
   }
+}
+
+// ── Two-hand resize + rotate ─────────────────────────────────────────────────
+// A second pinch landing on a window already held by the other hand switches
+// it into two-hand mode: the hand-to-hand distance drives scale and the
+// hand-to-hand angle drives yaw, on top of the primary hand's spring-follow.
+function grabbedWindowNear(point, excludeInputId) {
+  let best = null, bestDist = Infinity;
+  windows.forEach((win) => {
+    if (!win.grabbedBy || win.grabbedBy === excludeInputId) return;
+    const d = win.group.position.distanceTo(point);
+    if (d < TWO_HAND_RADIUS && d < bestDist) { best = win; bestDist = d; }
+  });
+  return best;
+}
+
+function beginTwoHand(win, primaryId, secondaryId, primaryPoint, secondaryPoint) {
+  win.twoHand = {
+    primaryId, secondaryId,
+    startDist: Math.max(0.02, primaryPoint.distanceTo(secondaryPoint)),
+    startAngle: Math.atan2(secondaryPoint.x - primaryPoint.x, secondaryPoint.z - primaryPoint.z),
+    startScale: win.baseScale,
+    startYaw: win.manualYaw,
+  };
+}
+
+function updateTwoHand(win, aPoint, bPoint, dt) {
+  const th = win.twoHand;
+  _vA.copy(aPoint).add(bPoint).multiplyScalar(0.5); // midpoint drives position
+  springToward(win, _vA, dt);
+
+  const dist = aPoint.distanceTo(bPoint);
+  const angle = Math.atan2(bPoint.x - aPoint.x, bPoint.z - aPoint.z);
+  win.baseScale = THREE.MathUtils.clamp(th.startScale * (dist / th.startDist), 0.35, 2.5);
+  win.manualYaw = th.startYaw + (angle - th.startAngle);
+  win.group.scale.setScalar(win.baseScale);
+}
+
+function endTwoHand(win) {
+  if (!win.twoHand) return;
+  win.twoHand = null;
+  win.anchor.copy(win.group.position); // sync before saving — group.position just moved under two-hand control
+  saveLayoutFor(win);
 }
 
 function clampToReach(win) {
@@ -750,12 +963,14 @@ function trashify(win) {
   win.state = 'trashing';
   win.trashStart = performance.now();
   win.trashFrom = win.group.position.clone();
+  win.trashFromScale = win.group.scale.x;
   playTrashSound();
 }
 
 function finalizeTrash(win) {
   win.state = 'closed';
   win.group.visible = false;
+  spawnScanRing(trashBin.position.clone().add(new THREE.Vector3(0, 0.2, 0)), COLOR.red, 0.02, 0.3, 400);
   closedWindows.push(win.id);
   windows.get('dock')?.redraw();
 }
@@ -766,9 +981,8 @@ function restoreAll() {
   windows.forEach((win) => {
     if (win.id === 'dock') return;
     win.group.visible = true;
-    win.state = 'idle';
     win.mesh.material.opacity = 1;
-    win.group.scale.set(1, 1, 1);
+    win.hasMaterialized = false; // replay the materialize-in effect
   });
   layoutWorld(roomAnchor);
   windows.get('dock')?.redraw();
@@ -841,6 +1055,15 @@ function onSelectStart(e) {
   if (inputSource.hand) {
     const p = pinchPointFromHand(inputSource, frame, refSpace);
     if (!p) return;
+    const heldByOther = grabbedWindowNear(p.pinch, inputSource);
+    if (heldByOther && !heldByOther.twoHand) {
+      const primaryEntry = [...grabMap.entries()].find(([, g]) => g.win === heldByOther);
+      const primaryPoint = primaryEntry && pinchPointFromHand(primaryEntry[0], frame, refSpace);
+      if (primaryEntry && primaryPoint) {
+        beginTwoHand(heldByOther, primaryEntry[0], inputSource, primaryPoint.pinch, p.pinch);
+        return;
+      }
+    }
     const win = nearestGrabbableAt(p.pinch);
     if (win) beginGrab(inputSource, win, p.pinch);
   } else {
@@ -863,7 +1086,18 @@ function onSelectStart(e) {
   }
 }
 
-function onSelectEnd(e) { endGrab(e.inputSource); }
+function onSelectEnd(e) {
+  const inputSource = e.inputSource;
+  windows.forEach((win) => {
+    if (win.twoHand && (win.twoHand.primaryId === inputSource || win.twoHand.secondaryId === inputSource)) {
+      endTwoHand(win);
+    }
+  });
+  endGrab(inputSource);
+}
+
+const _handPoints = new Map(); // inputSource -> {pinch, indexTip, thumbTip}, refreshed every frame
+const _twoHandInputs = new Set();
 
 function updateInputsPerFrame(frame, dt) {
   if (!frame) return;
@@ -878,16 +1112,34 @@ function updateInputsPerFrame(frame, dt) {
     } else reticle.visible = false;
   }
 
+  _handPoints.clear();
   for (const inputSource of session.inputSources) {
-    if (inputSource.hand) {
-      const p = pinchPointFromHand(inputSource, frame, refSpace);
-      if (!p) continue;
-      if (grabMap.has(inputSource)) updateGrab(inputSource, p.pinch, dt);
-      windows.forEach((win) => { if (!win.fixed) tryPoke(inputSource.handedness, win, p.indexTip); });
-    } else if (grabMap.has(inputSource)) {
-      const point = controllerPoint(inputSource, frame, refSpace);
-      if (point) updateGrab(inputSource, point, dt);
-    }
+    if (!inputSource.hand) continue;
+    const p = pinchPointFromHand(inputSource, frame, refSpace);
+    if (p) _handPoints.set(inputSource, p);
+  }
+
+  _twoHandInputs.clear();
+  windows.forEach((win) => {
+    if (!win.twoHand) return;
+    const a = _handPoints.get(win.twoHand.primaryId);
+    const b = _handPoints.get(win.twoHand.secondaryId);
+    if (!a || !b) { endTwoHand(win); return; }
+    _twoHandInputs.add(win.twoHand.primaryId);
+    _twoHandInputs.add(win.twoHand.secondaryId);
+    updateTwoHand(win, a.pinch, b.pinch, dt);
+  });
+
+  for (const [inputSource, p] of _handPoints) {
+    if (_twoHandInputs.has(inputSource)) continue; // position/scale driven by updateTwoHand instead
+    if (grabMap.has(inputSource)) updateGrab(inputSource, p.pinch, dt);
+    windows.forEach((win) => { if (!win.fixed) tryPoke(inputSource.handedness, win, p.indexTip); });
+  }
+
+  for (const inputSource of session.inputSources) {
+    if (inputSource.hand || !grabMap.has(inputSource)) continue;
+    const point = controllerPoint(inputSource, frame, refSpace);
+    if (point) updateGrab(inputSource, point, dt);
   }
 }
 
@@ -1058,17 +1310,17 @@ renderer.setAnimationLoop((time, frame) => {
 
   // dock always follows the head a little
   updateDockFollow(dt || 0.016);
+  updateEffects();
 
   // ambient particles drift
   const t = time / 1000;
-  const dummy = new THREE.Object3D();
   particles.forEach((p, i) => {
     const angle = p.baseAngle + t * p.speed;
     const y = p.height + Math.sin(t * 0.6 + p.bobPhase) * p.bobAmp;
-    dummy.position.set(Math.cos(angle) * p.radius, y, Math.sin(angle) * p.radius);
-    if (roomAnchor) dummy.position.add(new THREE.Vector3(roomAnchor.pos.x, 0, roomAnchor.pos.z));
-    dummy.updateMatrix();
-    particleMesh.setMatrixAt(i, dummy.matrix);
+    _particleDummy.position.set(Math.cos(angle) * p.radius, y, Math.sin(angle) * p.radius);
+    if (roomAnchor) { _particleDummy.position.x += roomAnchor.pos.x; _particleDummy.position.z += roomAnchor.pos.z; }
+    _particleDummy.updateMatrix();
+    particleMesh.setMatrixAt(i, _particleDummy.matrix);
   });
   particleMesh.instanceMatrix.needsUpdate = true;
 
@@ -1082,23 +1334,42 @@ renderer.setAnimationLoop((time, frame) => {
   trashBin.userData.rim.scale.setScalar(nearBin ? 1 + pulse * 0.15 : 1);
   labelWin.quaternion.copy(camera.quaternion); // screen-aligned billboard (label is a child of trashBin, which never rotates)
 
-  // windows: billboard + settle physics + bob + trash animation
+  // windows: billboard + settle physics + bob + materialize/trash animation
   windows.forEach((win) => {
     if (win.fixed || win.state === 'closed') return;
+
+    if (win.state === 'materializing') {
+      const elapsed = Math.min(1, (performance.now() - win.materializeStart) / 420);
+      win.group.scale.setScalar(Math.max(0.001, easeOutBack(elapsed) * win.baseScale));
+      win.mesh.material.opacity = Math.min(1, elapsed * 1.4);
+      if (elapsed >= 1) {
+        win.state = 'idle';
+        win.group.scale.setScalar(win.baseScale);
+        win.mesh.material.opacity = 1;
+      }
+      billboardY(win.group, camera.position, win.manualYaw);
+      return;
+    }
 
     if (win.state === 'trashing') {
       const elapsed = (performance.now() - win.trashStart) / 450;
       if (elapsed >= 1) { finalizeTrash(win); return; }
       win.group.position.lerpVectors(win.trashFrom, trashBin.position, elapsed * 0.9);
       win.group.position.y += 0.15 * Math.sin(elapsed * Math.PI);
-      win.group.scale.setScalar(1 - elapsed);
+      win.group.scale.setScalar((1 - elapsed) * win.trashFromScale);
       win.mesh.material.opacity = 1 - elapsed;
       win.group.rotation.y += dt * 10;
       return;
     }
 
+    if (win.twoHand) {
+      // position/scale/yaw already applied in updateInputsPerFrame this frame
+      billboardY(win.group, camera.position, win.manualYaw);
+      return;
+    }
+
     if (win.grabbedBy) {
-      billboardY(win.group, camera.position);
+      billboardY(win.group, camera.position, win.manualYaw);
       return;
     }
 
@@ -1108,12 +1379,13 @@ renderer.setAnimationLoop((time, frame) => {
       win.anchor.copy(win.group.position);
       clampToReach(win);
     } else {
+      if (win.state === 'settling') saveLayoutFor(win); // just came to rest — remember where
       win.state = 'idle';
       win.velocity.set(0, 0, 0);
       const bob = Math.sin(t * 0.8 + win.bobPhase) * 0.012;
       win.group.position.set(win.anchor.x, win.anchor.y + bob, win.anchor.z);
     }
-    billboardY(win.group, camera.position);
+    billboardY(win.group, camera.position, win.manualYaw);
   });
 
   renderer.render(scene, camera);
