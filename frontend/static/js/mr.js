@@ -22,7 +22,8 @@ const GRAB_RADIUS = 0.09;       // m — pinch/controller distance to title bar 
 const POKE_DEPTH = 0.035;       // m — fingertip band in front of a window that counts as a poke
 const POKE_COOLDOWN = 400;      // ms between repeat pokes of the same button
 const TRASH_CAPTURE_RADIUS = 0.32; // m — release-inside-this radius of the bin = dismiss
-const MIN_HOLD_DIST = 0.3, MAX_HOLD_DIST = 2.6; // m — how far a settled window may drift from user
+const MIN_HOLD_DIST = 0.3, MAX_HOLD_DIST = 2.6; // m — fallback circle, used only when the real boundary is unknown
+const ROOM_MARGIN = 0.22; // m — keep content this far inside the real Guardian boundary, when known
 const GRAB_STIFFNESS = 220;     // spring pull toward the live hand target — higher = snappier
 const GRAB_DAMPING = 0.78;      // velocity kept per 1/60s — lower = more viscous, less overshoot
 const TWO_HAND_RADIUS = GRAB_RADIUS * 2.2; // m — second hand may grab anywhere on an already-held window
@@ -613,6 +614,114 @@ function getRightXZ(forward) {
 
 let roomAnchor = null; // { pos: Vector3 (xz + eye height), forward, right }
 
+// ── Real room boundary (Quest Guardian) ──────────────────────────────────────
+// WebXR's optional 'bounded-floor' reference space exposes the user's actual
+// configured play-space polygon. When available we clamp every window and the
+// trash bin to stay safely inside it (and draw it), instead of an arbitrary
+// fixed-radius circle — so content never ends up outside the real walls, and
+// walking around the room shows it sitting in a fixed, real spot the whole
+// time. When unavailable (e.g. a stationary/boundary-less Guardian), we fall
+// back to the simple circle below. Note: WebXR gives no way to prevent or
+// detect the Guardian "leaving the boundary" passthrough fade — that is a
+// Quest OS safety feature, not something a web page can control — but keeping
+// content well inside the known boundary means you should rarely need to
+// approach that edge at all while using Moti.
+let roomBounds = null;         // [{x,z}, ...] polygon in local-floor space, once known
+let pendingBoundsSpace = null; // XRBoundedReferenceSpace awaiting its first resolvable pose
+let boundsDeadline = 0;
+let boundaryLine = null;
+
+async function tryLoadRoomBounds(session) {
+  try {
+    const space = await session.requestReferenceSpace('bounded-floor');
+    if (session !== xrSession) return; // session ended/changed while this was resolving
+    pendingBoundsSpace = space;
+    boundsDeadline = performance.now() + 3000;
+  } catch (err) {
+    pendingBoundsSpace = null; // no defined boundary this session — the circle fallback covers it
+  }
+}
+
+function resolveRoomBounds(frame, refSpace) {
+  if (!pendingBoundsSpace) return;
+  const geo = pendingBoundsSpace.boundsGeometry;
+  const pose = geo && geo.length >= 3 ? frame.getPose(pendingBoundsSpace, refSpace) : null;
+  if (pose) {
+    const m = new THREE.Matrix4().fromArray(pose.transform.matrix);
+    roomBounds = geo.map((p) => {
+      const v = new THREE.Vector3(p.x, p.y, p.z).applyMatrix4(m);
+      return { x: v.x, z: v.z };
+    });
+    pendingBoundsSpace = null;
+    onRoomBoundsResolved();
+  } else if (performance.now() > boundsDeadline) {
+    pendingBoundsSpace = null; // gave up — keep using the circle fallback
+  }
+}
+
+function onRoomBoundsResolved() {
+  buildBoundaryVisual(roomBounds);
+  windows.forEach((win) => {
+    if (win.fixed || (win.state !== 'idle' && win.state !== 'materializing')) return;
+    clampToPolygon(win.anchor, roomBounds, ROOM_MARGIN);
+    win.group.position.copy(win.anchor);
+  });
+  if (trashBin.visible) {
+    const p = trashBin.position.clone();
+    clampToPolygon(p, roomBounds, ROOM_MARGIN);
+    trashBin.position.copy(p);
+  }
+}
+
+function buildBoundaryVisual(poly) {
+  if (boundaryLine) { scene.remove(boundaryLine); boundaryLine.geometry.dispose(); boundaryLine.material.dispose(); }
+  const pts = poly.map((p) => new THREE.Vector3(p.x, 0.012, p.z));
+  const geo = new THREE.BufferGeometry().setFromPoints(pts);
+  const mat = new THREE.LineBasicMaterial({ color: COLOR.accent, transparent: true, opacity: 0.4 });
+  boundaryLine = new THREE.LineLoop(geo, mat);
+  scene.add(boundaryLine);
+}
+
+function pointInPolygon(x, z, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i].x, zi = poly[i].z, xj = poly[j].x, zj = poly[j].z;
+    if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+function distToSegment(px, pz, ax, az, bx, bz) {
+  const abx = bx - ax, abz = bz - az;
+  const len2 = abx * abx + abz * abz || 1e-9;
+  const t = Math.max(0, Math.min(1, ((px - ax) * abx + (pz - az) * abz) / len2));
+  return Math.hypot(px - (ax + abx * t), pz - (az + abz * t));
+}
+
+function distanceToPolygonEdge(x, z, poly) {
+  let min = Infinity;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    min = Math.min(min, distToSegment(x, z, poly[j].x, poly[j].z, poly[i].x, poly[i].z));
+  }
+  return min;
+}
+
+// Pulls (vec3.x, vec3.z) inward until it's inside the polygon with a margin —
+// an iterative shrink-toward-centroid rather than exact polygon offsetting,
+// which is simple, robust, and plenty accurate for Guardian's roughly-convex
+// room shapes.
+function clampToPolygon(vec3, poly, margin) {
+  let cx = 0, cz = 0;
+  poly.forEach((p) => { cx += p.x; cz += p.z; });
+  cx /= poly.length; cz /= poly.length;
+  let x = vec3.x, z = vec3.z, iter = 0;
+  while (iter++ < 24 && (!pointInPolygon(x, z, poly) || distanceToPolygonEdge(x, z, poly) < margin)) {
+    x += (cx - x) * 0.12;
+    z += (cz - z) * 0.12;
+  }
+  vec3.x = x; vec3.z = z;
+}
+
 // ── Layout persistence — remembers where you left each window relative to the
 // room, so reopening the app on a reload puts things back (e.g. "on the table")
 // instead of always resetting to the default arc. Real WebXR persistent
@@ -659,6 +768,7 @@ function layoutWorld(anchor) {
       p = pos.clone().add(dir.multiplyScalar(radius));
       p.y = pos.y + hOff;
     }
+    if (roomBounds) clampToPolygon(p, roomBounds, ROOM_MARGIN);
     win.setAnchor(p);
     win.velocity.set(0, 0, 0);
     if (!win.hasMaterialized) { win.hasMaterialized = true; win.playMaterialize(); }
@@ -748,12 +858,15 @@ function placeTrashBinDefault(anchor) {
   const rad = (-65 * Math.PI) / 180;
   const dir = forward.clone().multiplyScalar(Math.cos(rad)).add(right.clone().multiplyScalar(Math.sin(rad)));
   const p = new THREE.Vector3(pos.x, 0, pos.z).add(dir.multiplyScalar(0.95));
+  if (roomBounds) clampToPolygon(p, roomBounds, ROOM_MARGIN);
   trashBin.position.copy(p);
   trashBin.visible = true;
 }
 
 function placeTrashBinAt(pose) {
-  trashBin.position.set(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
+  const p = new THREE.Vector3(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
+  if (roomBounds) clampToPolygon(p, roomBounds, ROOM_MARGIN);
+  trashBin.position.copy(p);
   trashBin.visible = true;
 }
 
@@ -815,10 +928,9 @@ async function tryStartPlacement(session) {
 function finishPlacement(pose) {
   placementMode = false;
   reticle.visible = false;
-  if (pose) placeTrashBinAt(pose);
   const anchor = computeRoomAnchor();
-  layoutWorld(anchor);
-  if (pose) trashBin.position.set(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
+  layoutWorld(anchor); // positions windows + a default trash-bin spot
+  if (pose) placeTrashBinAt(pose); // override with the real floor spot the user tapped, if any
   xrHint.hidden = false;
   xrHint.textContent = 'Pinch a title bar to grab a window · poke a button to click it';
   setTimeout(() => { xrHint.hidden = true; }, 5000);
@@ -936,6 +1048,7 @@ function endTwoHand(win) {
 }
 
 function clampToReach(win) {
+  if (roomBounds) { clampToPolygon(win.anchor, roomBounds, ROOM_MARGIN); return; }
   if (!roomAnchor) return;
   const flat = new THREE.Vector3(win.anchor.x - roomAnchor.pos.x, 0, win.anchor.z - roomAnchor.pos.z);
   const dist = flat.length();
@@ -1103,6 +1216,7 @@ function updateInputsPerFrame(frame, dt) {
   if (!frame) return;
   const refSpace = renderer.xr.getReferenceSpace();
   const session = frame.session;
+  resolveRoomBounds(frame, refSpace);
   if (placementMode && hitTestSource) {
     const results = frame.getHitTestResults(hitTestSource);
     if (results.length) {
@@ -1248,6 +1362,7 @@ async function onSessionStarted(session, mode) {
   exitBtn.hidden = false;
   xrHint.hidden = false;
   xrHint.textContent = 'Setting up your holo-room…';
+  tryLoadRoomBounds(session); // resolves over the next few frames; everything re-clamps once it does
 
   if (mode === 'immersive-ar') {
     await tryStartPlacement(session);
@@ -1261,6 +1376,9 @@ function onSessionEnded() {
   currentMode = 'none';
   xrSession = null;
   grabMap.clear();
+  roomBounds = null;
+  pendingBoundsSpace = null;
+  if (boundaryLine) { scene.remove(boundaryLine); boundaryLine.geometry.dispose(); boundaryLine.material.dispose(); boundaryLine = null; }
   landing.hidden = false;
   exitBtn.hidden = true;
   xrHint.hidden = true;
