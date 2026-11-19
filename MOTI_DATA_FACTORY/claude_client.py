@@ -18,6 +18,7 @@ from DEVNULL — without it the CLI waits ~3s for stdin and prints a stray
 warning line.
 """
 import json
+import re
 import subprocess
 import time
 
@@ -28,6 +29,21 @@ class ClaudeCallError(Exception):
         self.stdout = stdout
         self.stderr = stderr
         self.returncode = returncode
+
+
+# Claude Pro/Max (unlike a metered API key) has a usage window that resets
+# every few hours, not per-request billing. Heavy generation will hit it —
+# that is expected, not a bug — so those errors need a long pause-and-resume,
+# not the short exponential backoff meant for transient network hiccups.
+_RATE_LIMIT_PATTERNS = re.compile(
+    r"usage limit|rate limit|rate.?limited|quota|try again later|"
+    r"too many requests|429|resets? at|upgrade to continue",
+    re.IGNORECASE,
+)
+
+
+def is_rate_limit_error(message):
+    return bool(_RATE_LIMIT_PATTERNS.search(message or ""))
 
 
 class ClaudeResult:
@@ -118,17 +134,42 @@ def call_claude(prompt, system_prompt, json_schema, config, extra_args=None):
 
 
 def call_claude_with_retries(prompt, system_prompt, json_schema, config, logger=None, extra_args=None):
-    """Retries with exponential backoff per config['max_retries_per_batch']."""
+    """Retries with exponential backoff for transient failures. A usage-limit
+    error (Pro/Max's periodic reset, not a metered API) instead waits the
+    long, configured pause and keeps retrying up to rate_limit_max_retries —
+    short backoff is pointless against a multi-hour reset window."""
     max_retries = config["max_retries_per_batch"]
     base = config["retry_backoff_base_sec"]
+    rate_limit_wait = config.get("rate_limit_wait_sec", 1800)
+    rate_limit_max_retries = config.get("rate_limit_max_retries", 10)
+
     last_err = None
-    for attempt in range(1, max_retries + 1):
+    rate_limit_attempts = 0
+    attempt = 0
+    while True:
+        attempt += 1
         try:
             return call_claude(prompt, system_prompt, json_schema, config, extra_args=extra_args)
         except ClaudeCallError as e:
             last_err = e
+            if is_rate_limit_error(str(e)):
+                rate_limit_attempts += 1
+                if rate_limit_attempts > rate_limit_max_retries:
+                    if logger:
+                        logger.error("usage limit still not clear after %d waits — giving up for now: %s",
+                                     rate_limit_max_retries, e)
+                    raise last_err
+                msg = (f"usage limit reached — pausing {rate_limit_wait // 60} min before retrying "
+                       f"(wait {rate_limit_attempts}/{rate_limit_max_retries}): {e}")
+                if logger:
+                    logger.warning(msg)
+                else:
+                    print(msg)
+                time.sleep(rate_limit_wait)
+                continue
+
             if logger:
                 logger.warning("claude call failed (attempt %d/%d): %s", attempt, max_retries, e)
-            if attempt < max_retries:
-                time.sleep(base * (2 ** (attempt - 1)))
-    raise last_err
+            if attempt >= max_retries:
+                raise last_err
+            time.sleep(base * (2 ** (attempt - 1)))

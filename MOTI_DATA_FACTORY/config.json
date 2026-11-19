@@ -40,6 +40,8 @@
   "subprocess_timeout_sec": 300,
   "max_retries_per_batch": 3,
   "retry_backoff_base_sec": 5,
+  "rate_limit_wait_sec": 1800,
+  "rate_limit_max_retries": 10,
 
   "batch_size_min": 18,
   "batch_size_max": 30,
