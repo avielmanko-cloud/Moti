@@ -1,0 +1,73 @@
+{
+  "target_total": 50000,
+  "categories": {
+    "everyday": {
+      "name_he": "שיחות יומיומיות",
+      "target": 8000
+    },
+    "personality_humor": {
+      "name_he": "אישיות, הומור וסרקזם",
+      "target": 7000
+    },
+    "emotional_intelligence": {
+      "name_he": "אינטליגנציה רגשית ואמפתיה",
+      "target": 6000
+    },
+    "general_knowledge": {
+      "name_he": "ידע כללי",
+      "target": 6000
+    },
+    "reasoning": {
+      "name_he": "חשיבה ופתרון בעיות",
+      "target": 6000
+    },
+    "memory_familiarity": {
+      "name_he": "זיכרון והיכרות עם המשתמש",
+      "target": 5000
+    },
+    "long_context": {
+      "name_he": "שיחות ארוכות והמשכיות הקשרית",
+      "target": 5000
+    },
+    "complex_unusual": {
+      "name_he": "מצבים מורכבים ויוצאי דופן",
+      "target": 4000
+    }
+  },
+
+  "claude_cli_path": "claude",
+  "model": "sonnet",
+  "subprocess_timeout_sec": 300,
+  "max_retries_per_batch": 3,
+  "retry_backoff_base_sec": 5,
+
+  "batch_size_min": 18,
+  "batch_size_max": 30,
+
+  "min_messages_per_conversation": 3,
+  "max_messages_per_conversation": 12,
+  "max_message_chars": 700,
+  "min_hebrew_letter_ratio": 0.65,
+  "max_latin_letter_ratio": 0.15,
+
+  "near_duplicate_jaccard_threshold": 0.82,
+  "near_duplicate_window_per_category": 400,
+  "opening_signature_words": 5,
+
+  "semantic_check_enabled": true,
+  "semantic_check_batch_size": 10,
+
+  "scenario_seeds_per_batch": 8,
+
+  "progress_file": "state/progress.json",
+  "category_progress_file": "state/category_progress.json",
+  "test_marker_file": "state/test_passed.json",
+
+  "generation_log": "logs/generation.log",
+  "error_log": "logs/errors.log",
+
+  "approved_dir": "data/approved",
+  "rejected_dir": "data/rejected",
+  "raw_dir": "data/raw",
+  "output_file": "output/moti_50000.txt"
+}

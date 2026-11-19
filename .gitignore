@@ -9,3 +9,12 @@ dist/
 build/
 .pytest_cache/
 certs/
+
+# MOTI_DATA_FACTORY — generated/run artifacts, not source. The 50k-conversation
+# dataset, logs and progress state are regenerable (and large); only the code,
+# prompts and config that produce them are tracked.
+MOTI_DATA_FACTORY/data/
+MOTI_DATA_FACTORY/logs/
+MOTI_DATA_FACTORY/output/
+MOTI_DATA_FACTORY/state/
+

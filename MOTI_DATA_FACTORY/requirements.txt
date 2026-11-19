@@ -1,0 +1,4 @@
+# MOTI Data Factory runs entirely on the Python standard library.
+# The generation engine is the already-installed Claude Code CLI, invoked as a
+# subprocess (no SDK, no API key, no extra Python packages to talk to a model).
+# This file is intentionally empty of third-party packages, by design.
